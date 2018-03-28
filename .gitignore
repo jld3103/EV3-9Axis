@@ -99,3 +99,9 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+_eric6project/
+
+EV3-9Axis\.e4p
+
+__init__\.py
