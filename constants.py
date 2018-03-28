@@ -1,7 +1,7 @@
 # Constants file
-# Used for global not-changing variables
+# Used for global variables
 
-# Author: Finn G.
+# Author: Jan-Luca D., Finn G.
 
 from logger import *
 
