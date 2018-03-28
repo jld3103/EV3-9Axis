@@ -28,7 +28,7 @@ class BluetoothThread(threading.Thread):
         self.bluetoothSendQueue = bluetoothSendQueue
         
     def run(self):
-        # create the bluetooth server...
+        # Create the bluetooth server...
         info("Create Bluetooth server")
         try:
             self.creatServer()
@@ -36,27 +36,27 @@ class BluetoothThread(threading.Thread):
             error("Failed to create server: %s" % e)
             return
         
-        # Wait for 10 msgs... (Only for debugging)
-        for i in range(10):
-            data = self.listen()
-            self.send(data)
-        
-        info("Close bluetooth service")
-        return
-        
         # Send data until the ev3 programm close...
-        global alive
-        while alive:
+        while True:
+            self.listen()
             try:
                 msg = self.bluetoothSendQueue.get(timeout=1.0)
             except:
                 continue
-                
+            
             debug("Get a command in the bluetoothSendQueue: %s" % msg)
             
-            # Send echo...
-            self.send(self.listen())
-
+            # Send msg...
+            self.send(str(msg))
+            
+            # If the msg channel is 'close' exit the Thread...
+            if msg.channel == "close":
+                break
+        
+        global s
+        
+        # Close bluetooth server...
+        s.close()
         info("Close bluetooth service")
 
     def creatServer(self, mac=None):
@@ -74,13 +74,22 @@ class BluetoothThread(threading.Thread):
         info("Using " + mac + " as MAC")
         backlog = 1
         global s
+        
+        # Create the server...
         s = BluetoothSocket(RFCOMM)
         s.bind((mac, port))
         s.listen(backlog)
+        
+        # Wait for a client...
+        self.waitForClient()
+            
+    def waitForClient(self):
+        """Wait for a client"""
+        info("Wait for client...")
         try:
             global client
             client, clientInfo = s.accept()
-            print("New Connection")
+            info("New Connection")
         except:
             pass
         
@@ -99,7 +108,19 @@ class BluetoothThread(threading.Thread):
     def listen(self):
         """Receive messages with a callback"""
         debug("Wait for msg")
-        data = client.recv(size)
-        debug("Recived msg: %s" % str(data))
-        return data
+        try:
+            # Wait for data...
+            data = client.recv(size)
+        except:
+            error("Client disconnected")
+            self.waitForClient()
+            return
         
+        debug("Recived msg: %s" % str(data))
+        
+        # Split the data in channel and value...
+        data = str(data).split("'")[1]
+        fragments = str(data).split(": ")
+        
+        # Put recived message in the queue...
+        self.bluetoothReciveQueue.put(Message(channel=fragments[0].strip(), value=fragments[1].strip()))

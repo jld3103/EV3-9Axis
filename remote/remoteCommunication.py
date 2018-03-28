@@ -20,7 +20,7 @@ class BluetoothThread(threading.Thread):
         self.bluetoothSendQueue = bluetoothSendQueue
         
     def run(self):
-        # connect to bluetooth device...
+        # Connect to bluetooth device...
         info("Connecting to EV3")
         try:
             self.connectByLastConnection()
@@ -29,9 +29,10 @@ class BluetoothThread(threading.Thread):
             info("Close bluetooth service")
             return
 
-        # send data until the MainWindow close...
-        #global alive
+        # Send data until the MainWindow close...
+        global alive
         while alive:
+            # Wait max. one second for a message in the queue...
             try:
                 msg = self.bluetoothSendQueue.get(timeout=1.0)
             except:
@@ -39,11 +40,22 @@ class BluetoothThread(threading.Thread):
                 
             debug("Get a command in the bluetoothSendQueue: %s" % msg)
             
+            # If the message is a disconnect command, exit the Thread...
+            if msg.channel == "connection":
+                if msg.value == "disconnect":
+                    break
+            
+            # Send the message...
             self.send(str(msg))
+            
+            # Recive the answer...
             self.listen()
         
-        # diconnect...
-        self.disconnect()
+        # Disconnect...
+        try:
+            self.disconnect()
+        except Exception as e:
+            error("Faild to disconnect: %s" % e)
         info("Close bluetooth service")
 
     def searchDevices(self):
@@ -115,13 +127,13 @@ class BluetoothThread(threading.Thread):
         info("Connecting to MAC " + mac)
         self.storeMAC(mac)
 
-        # Connect
+        # Connect...
         global s
         s = BluetoothSocket(RFCOMM)
         s.connect((mac, port))
         info("Connected")
         
-        # Inform GUI...
+        # Inform the GUI...
         self.bluetoothReciveQueue.put(Message(channel="connection", value="connected"))
 
     def disconnect(self):
@@ -130,7 +142,7 @@ class BluetoothThread(threading.Thread):
         global s
         s.close()
         
-        # Inform GUI...
+        # Inform the GUI...
         self.bluetoothReciveQueue.put(Message(channel="connection", value="disconnected"))
 
     def send(self, text):
@@ -140,9 +152,9 @@ class BluetoothThread(threading.Thread):
         try:
             s.send(text)
         except OSError as e:
-            error("Failed to send: %s" % e) #TODO: Handle the error
+            error("Failed to send: %s" % e)
             
-            # Inform GUI...
+            # Inform the GUI...
             self.bluetoothReciveQueue.put(Message(channel="connection", value="disconnected"))
 
     def listen(self, timeout=1.0):
@@ -154,13 +166,13 @@ class BluetoothThread(threading.Thread):
         try:
             data = s.recv(MSGLEN)
         except OSError as e:
-            error("Failed to Recive: %s" % e) #TODO: Handle the error
+            error("Failed to Recive: %s" % e)
             
             # Inform GUI...
-            self.bluetoothReciveQueue.put(Message(channel="connection", value="disconnected"))
+            self.bluetoothReciveQueue.put(Message(channel="close", value="disconnected"))
             return
 
         info("Recived: %s" % (data))
         data = str(data).split("'")[1]
         fragments = str(data).split(": ")
-        self.bluetoothReciveQueue.put(Message(channel=fragments[0].strip(), value=fragments[1].strip())) #TODO: split recived msg in the correct parts
+        self.bluetoothReciveQueue.put(Message(channel=fragments[0].strip(), value=fragments[1].strip()))

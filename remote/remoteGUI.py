@@ -3,8 +3,9 @@
 # This is the main file for the 3D Gui
 # Author: Finn G.
 
-version = "1.0"
+version = "1.1"
 
+from message import Message
 import remote.remoteCommunication as communication
 import queue
 from PyQt4 import QtGui,  QtCore
@@ -58,6 +59,7 @@ class MessageTextEdit(QtGui.QTextEdit):
         """Insert a new line in the start of the QTextEdit"""
         # Move cursor to the start...
         self.moveCursor(QtGui.QTextCursor.Start, 0)
+        
         # Insert new line...
         self.insertHtml("<br>")
         self.moveCursor(QtGui.QTextCursor.Start, 0)
@@ -85,7 +87,7 @@ class MessageTextEdit(QtGui.QTextEdit):
         QtGui.QTextEdit.keyPressEvent(self,  event)
 
 class MainWindow(QtGui.QMainWindow):
-    """Stellt die Hauptbenutzeroberfläche dar"""
+    """Controls the window"""
     
     bluetoothEvent = QtCore.pyqtSignal(str, str, int)
     
@@ -115,10 +117,10 @@ class MainWindow(QtGui.QMainWindow):
         mainMenu = self.menuBar()
         mainMenu.setGeometry(QtCore.QRect(0, 0, self.size().width(), self.menubarHeight))
         bluetoothMenu = mainMenu.addMenu('&Bluetooth')
-        connectAction = QtGui.QAction("&Connect", self)
-        connectAction.setStatusTip('Connect to EV3')
-        connectAction.triggered.connect(self.onConnect)
-        bluetoothMenu.addAction(connectAction)
+        self.connectionAction = QtGui.QAction("&Connect", self)
+        self.connectionAction.setStatusTip('Connect to EV3')
+        self.connectionAction.triggered.connect(self.onConnection)
+        bluetoothMenu.addAction(self.connectionAction)
         
         # Create the images for drawing...
         roomImgSize = QtCore.QSize(self.size().width()*0.7, self.size().height()-(self.menubarHeight*2))
@@ -133,30 +135,50 @@ class MainWindow(QtGui.QMainWindow):
         self.messageTextEdit.setGeometry(QtCore.QRect(self.size().width()*0.7, self.size().width()*0.3, self.size().width()-self.size().width()*0.7, self.size().height()-self.menubarHeight-self.size().width()*0.3))
         self.connect(self.messageTextEdit, QtCore.SIGNAL("sendMessage"),  self.onSendMessage)
         
-        # create the queues for the bluetooth data...
+        # Create the queues for the bluetooth data...
         self.bluetoothReciveQueue = queue.Queue()
         self.bluetoothSendQueue = queue.Queue()
         
         # Connect the bluetoothEvent signal...
         self.bluetoothEvent.connect(self.onBluetoothEvent)
         
-        # start the bluetoothThread...
+        # Start the bluetoothThread...
         bluetoothReciveThread = BluetoothReciveThread(self.bluetoothReciveQueue, self.bluetoothEvent)
         bluetoothReciveThread.setName("BluetoothReciveThread")
         bluetoothReciveThread.start()
         
-        # start the Thread for the bluetooth connection...
-        bluetoothThread = communication.BluetoothThread(self.bluetoothReciveQueue, self.bluetoothSendQueue)
-        bluetoothThread.setName("BluetoothThread")
-        bluetoothThread.start()
+        # Start the Thread for the bluetooth connection...
+        self.bluetoothThread = communication.BluetoothThread(self.bluetoothReciveQueue, self.bluetoothSendQueue)
+        self.bluetoothThread.setName("BluetoothThread")
+        self.bluetoothThread.start()
         
     def onSendMessage(self, text):
+        """Send a command of the QTextEdit"""
         info("send msg: %s" % text)
-        self.bluetoothSendQueue.put(Message(channel="user input", value=text))
         
-    def onConnect(self):
+        # Split the text in channel and value...
+        fragments = text.split(": ")
+        
+        # If channel and value exist spit them...
+        if len(fragments) == 2:
+            self.bluetoothSendQueue.put(Message(channel=fragments[0], value=fragments[1]))
+        else:
+            self.bluetoothSendQueue.put(Message(channel=fragments[0]))
+        
+    def onConnection(self):
         """Handle the connect action in the menubar"""
-        pass
+        info("Thread alive: %s" % self.bluetoothThread.isAlive())
+        if self.connectionAction.text() == "Connect" and not self.bluetoothThread.isAlive():
+            # Start the Thread for the bluetooth connection...
+            info("Send connect signal")
+            self.bluetoothThread = communication.BluetoothThread(self.bluetoothReciveQueue, self.bluetoothSendQueue)
+            self.bluetoothThread.setName("BluetoothThread")
+            self.bluetoothThread.start()
+
+        elif self.connectionAction.text() == "Disconnect" and self.bluetoothThread.isAlive():
+            # Send disconnect signal...
+            info("Send disconnect signal")
+            self.bluetoothSendQueue.put(Message(channel="connection", value="disconnect"))
         
     @QtCore.pyqtSlot(str, str, int)
     def onBluetoothEvent(self, channel, value, level):
@@ -164,11 +186,21 @@ class MainWindow(QtGui.QMainWindow):
         
         self.messageTextEdit.newMessage(channel, value, level)
         
+        # The client disconnected or connected...
         if channel == "connection":
             if value == "connected":
+                self.connectionAction.setText("Disconnect")
                 self.bluetoothConnected.setText("Connected")
+                QtGui.QMessageBox.information(None, "Bluetooth", "Connected...", QtGui.QMessageBox.Ok)
             else:
+                self.connectionAction.setText("Connect")
                 self.bluetoothConnected.setText("Disonnected")
+                QtGui.QMessageBox.information(None, "Bluetooth", "Disonnected...", QtGui.QMessageBox.Ok)
+        # The server closed...
+        elif channel == "close":
+            self.bluetoothConnected.setText("Disonnected")
+            self.bluetoothSendQueue.put(Message(channel="connection", value="disconnect"))
+            QtGui.QMessageBox.information(None, "Bluetooth", "Server closed...", QtGui.QMessageBox.Ok)
                 
     def paintEvent(self, event):
         """Paint the window."""
@@ -201,6 +233,18 @@ class MainWindow(QtGui.QMainWindow):
         robotImgSize = QtCore.QSize(self.size().width()*0.3, self.size().width()*0.3)
         self.robot_image = QtGui.QImage(robotImgSize, QtGui.QImage.Format_RGB32)
         self.robot_image.fill(QtGui.qRgb(150, 150, 150))
+        
+    def closeEvent(self, event):
+        """When the window close, close the server, too"""
+        
+        # If the bluetooth connection is disconnected, reconnect...
+        if not self.bluetoothThread.isAlive():
+            self.bluetoothThread = communication.BluetoothThread(self.bluetoothReciveQueue, self.bluetoothSendQueue)
+            self.bluetoothThread.setName("BluetoothThread")
+            self.bluetoothThread.start()
+        
+        # Close the server...
+        self.bluetoothSendQueue.put(Message(channel="close"))
         
 class RemoteGUI():
     """Create the window"""
