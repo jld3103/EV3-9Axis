@@ -4,6 +4,7 @@
 from bluetooth import *
 import threading
 from constants import *
+from message import Message
 from logger import *
 from utils import *
 
@@ -27,11 +28,6 @@ class BluetoothThread(threading.Thread):
             error(e)
             info("Close bluetooth service")
             return
-        
-        global alive
-        while alive:
-            self.send(input())
-            self.listen()
 
         # send data until the MainWindow close...
         #global alive
@@ -43,7 +39,7 @@ class BluetoothThread(threading.Thread):
                 
             debug("Get a command in the bluetoothSendQueue: %s" % msg)
             
-            self.send(msg)
+            self.send(str(msg))
             self.listen()
         
         # diconnect...
@@ -124,19 +120,30 @@ class BluetoothThread(threading.Thread):
         s = BluetoothSocket(RFCOMM)
         s.connect((mac, port))
         info("Connected")
+        
+        # Inform GUI...
+        self.bluetoothReciveQueue.put(Message(channel="connection", value="connected"))
 
     def disconnect(self):
         """Disconnect from bluetooth device"""
         info("Disconnect from bluetooth device")
         global s
         s.close()
-
+        
+        # Inform GUI...
+        self.bluetoothReciveQueue.put(Message(channel="connection", value="disconnected"))
 
     def send(self, text):
         """Send data to bluetooth device"""
         debug("Send '%s' to bluetooth device" % text)
         global s
-        s.send(text)
+        try:
+            s.send(text)
+        except OSError as e:
+            error("Failed to send: %s" % e) #TODO: Handle the error
+            
+            # Inform GUI...
+            self.bluetoothReciveQueue.put(Message(channel="connection", value="disconnected"))
 
     def listen(self, timeout=1.0):
         """Receive messages with a callback"""
@@ -144,6 +151,16 @@ class BluetoothThread(threading.Thread):
         global MSGLEN
 
         info("Wait for msg...")
-        data = s.recv(MSGLEN)
+        try:
+            data = s.recv(MSGLEN)
+        except OSError as e:
+            error("Failed to Recive: %s" % e) #TODO: Handle the error
+            
+            # Inform GUI...
+            self.bluetoothReciveQueue.put(Message(channel="connection", value="disconnected"))
+            return
+
         info("Recived: %s" % (data))
-        self.bluetoothReciveQueue.put(Message(value=data)) #TODO: split recived msg in the correct parts
+        data = str(data).split("'")[1]
+        fragments = str(data).split(": ")
+        self.bluetoothReciveQueue.put(Message(channel=fragments[0].strip(), value=fragments[1].strip())) #TODO: split recived msg in the correct parts

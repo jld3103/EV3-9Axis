@@ -6,6 +6,7 @@ import atexit
 from bluetooth import *
 import threading
 from constants import *
+from message import Message
 from logger import *
 from utils import *
 
