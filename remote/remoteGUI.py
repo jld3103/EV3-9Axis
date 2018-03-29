@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# This is the main file for the 3D Gui
+# This is the main file for the Gui
 # Author: Finn G.
 
 version = "1.1"
@@ -56,7 +56,7 @@ class MessageTextEdit(QtGui.QTextEdit):
         self.setFont(font)
         
     def nextLine(self):
-        """Insert a new line in the start of the QTextEdit"""
+        """Insert a new line at the top of the QTextEdit"""
         # Move cursor to the start...
         self.moveCursor(QtGui.QTextCursor.Start, 0)
         
@@ -69,7 +69,7 @@ class MessageTextEdit(QtGui.QTextEdit):
         # Move cursor to the start...
         self.moveCursor(QtGui.QTextCursor.Start, 0)
         
-        # Insert the 3 parts of the strin in diffrent colors...
+        # Insert the 3 parts of the string in diffrent colors...
         self.insertHtml("<br><span style='color:red;'>%s: </span><span style='color:blue;'>%s</span><span style='color:green;'> (%d)</span>" % (channel, value, level))
         self.moveCursor(QtGui.QTextCursor.Start, 0)
 
@@ -91,8 +91,8 @@ class MainWindow(QtGui.QMainWindow):
     
     bluetoothEvent = QtCore.pyqtSignal(str, str, int)
     
-    def __init__(self, version, parent=None):
-        QtGui.QMainWindow.__init__(self, parent=None)
+    def __init__(self, version):
+        QtGui.QMainWindow.__init__(self)
         
         # Set the window title...
         self.setWindowTitle("EV3 Gui - v%s" % (version))
@@ -102,12 +102,12 @@ class MainWindow(QtGui.QMainWindow):
         self.setMinimumSize(QtCore.QSize(630, 420))
         
         # Set background color...
-        self.menubarHeight = 26
         palette = self.palette()
         palette.setColor(self.backgroundRole(), QtCore.Qt.white)
         self.setPalette(palette)
         
         # Create statusbar...
+        self.menubarHeight = 26
         self.statusBar = self.statusBar()
         self.statusBar.setGeometry(QtCore.QRect(0, self.size().height()-self.menubarHeight, self.size().width(), self.size().height()-self.menubarHeight))
         self.bluetoothConnected = QtGui.QLabel("Disonnected")
@@ -226,7 +226,7 @@ class MainWindow(QtGui.QMainWindow):
         # Uptdata TextEdit size...
         self.messageTextEdit.setGeometry(QtCore.QRect(self.size().width()*0.7, self.size().width()*0.3, self.size().width()-self.size().width()*0.7, self.size().height()-self.menubarHeight-self.size().width()*0.3))
 
-        # Create a new image with new size and re-draw the rail network
+        # Create new images with new size..
         roomImgSize = QtCore.QSize(self.size().width()*0.7, self.size().height()-(self.menubarHeight*2))
         self.room_image = QtGui.QImage(roomImgSize, QtGui.QImage.Format_RGB32)
         self.room_image.fill(QtGui.qRgb(150, 150, 150))
