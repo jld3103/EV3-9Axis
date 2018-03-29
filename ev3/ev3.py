@@ -16,6 +16,13 @@ class EV3:
     
     def __init__(self):
         
+        # Define all channels...
+        self.channels = { "touchSensor" : self.sendTouchValue, 
+                    "infraredSensor" : self.sendInfraredValue, 
+                    "Accel" : self.sendAccelData, 
+                    "Gyrol" : self.sendAccelData, 
+                    "Mag" : self.sendAccelData}
+        
         # Init all snesors...
         self.touchSensor = ev3.TouchSensor()
         self.infraredSensor = ev3.InfraredSensor()
@@ -42,48 +49,18 @@ class EV3:
         while True:
             data = self.bluetoothReciveQueue.get()
             info("Get data in ReciveQueue: %s" % data)
+            
+            # If the channel is 'close', close server...
             if data.channel == "close":
                 self.bluetoothSendQueue.put(Message(channel="close", value="True"))
                 break
                 
-            # EV3 sensors...
-            elif data.channel == "touchSensor":
-                self.sendTouchValue()
-            elif data.channel == "infraredSensor":
-                self.sendInfraredValue()
+            # If given channel in channels, execute function...
+            elif data.channel in self.channels:
+                self.channels[data.channel]()
                 
-            # All accel datas...
-            elif data.channel == "Accel":
-                self.sendAccelData()
-            elif data.channel == "AccelX":
-                self.sendAccelData(axes=['x'])
-            elif data.channel == "AccelY":
-                self.sendAccelData(axes=['y'])
-            elif data.channel == "AccelZ":
-                self.sendAccelData(axes=['z'])  
-                
-            # All gyro datas...
-            elif data.channel == "Gyrol":
-                self.sendAccelData() 
-            elif data.channel == "GyrolX":
-                self.sendAccelData(axes=['x']) 
-            elif data.channel == "GyroY":
-                self.sendAccelData(axes=['y']) 
-            elif data.channel == "GyroZ":
-                self.sendAccelData(axes=['z']) 
-                
-            # All mag datas...
-            elif data.channel == "Mag":
-                self.sendAccelData() 
-            elif data.channel == "MagX":
-                self.sendAccelData(axes=['x']) 
-            elif data.channel == "MagY":
-                self.sendAccelData(axes=['y']) 
-            elif data.channel == "MagZ":
-                self.sendAccelData(axes=['z']) 
-                
+            # If not, send echo...
             else:
-                #Echo...
                 self.bluetoothSendQueue.put(data)
                 
         info("Exit main thread")

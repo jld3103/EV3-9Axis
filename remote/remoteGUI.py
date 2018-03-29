@@ -54,7 +54,7 @@ class MessageTextEdit(QtGui.QTextEdit):
         font = QtGui.QFont()
         font.setPointSize(12)
         self.setFont(font)
-        
+                
     def nextLine(self):
         """Insert a new line at the top of the QTextEdit"""
         # Move cursor to the start...
@@ -75,13 +75,16 @@ class MessageTextEdit(QtGui.QTextEdit):
 
     def keyPressEvent(self,  event):
         """When Return pressed, send the first line to MainWindow"""
+        
         # check if the pressed key is return...
         if event.key() == QtCore.Qt.Key_Return:
             if event.modifiers() == QtCore.Qt.ControlModifier:
-                event = QtCore.QKeyEvent(QEvent.KeyPress,  Qt.Key_Return,Qt.NoModifier)
+                event = QtCore.QKeyEvent(QEvent.KeyPress,  Qt.Key_Return, Qt.NoModifier)
             else:
-                self.emit(QtCore.SIGNAL("sendMessage"), self.toPlainText().split("\n")[0].strip())
-                self.nextLine()
+                firstLine = self.toPlainText().split("\n")[0].strip()
+                if len(firstLine) > 0:
+                    self.emit(QtCore.SIGNAL("sendMessage"), firstLine)
+                    self.nextLine()
                 return
 
         QtGui.QTextEdit.keyPressEvent(self,  event)
@@ -236,12 +239,6 @@ class MainWindow(QtGui.QMainWindow):
         
     def closeEvent(self, event):
         """When the window close, close the server, too"""
-        
-        # If the bluetooth connection is disconnected, reconnect...
-        if not self.bluetoothThread.isAlive():
-            self.bluetoothThread = communication.BluetoothThread(self.bluetoothReciveQueue, self.bluetoothSendQueue)
-            self.bluetoothThread.setName("BluetoothThread")
-            self.bluetoothThread.start()
         
         # Close the server...
         self.bluetoothSendQueue.put(Message(channel="close"))
