@@ -240,8 +240,11 @@ class MainWindow(QtGui.QMainWindow):
     def closeEvent(self, event):
         """When the window close, close the server, too"""
         
+        question = QtGui.QMessageBox.question(None, "Connection", "Close server?", "Yes", "No")
+
         # Close the server...
-        self.bluetoothSendQueue.put(Message(channel="close"))
+        if question == 0:
+            self.bluetoothSendQueue.put(Message(channel="close"))
         
 class RemoteGUI():
     """Create the window"""
