@@ -9,6 +9,7 @@ from message import Message
 import remote.remoteCommunication as communication
 import queue
 from PyQt4 import QtGui,  QtCore
+import remote.widgets as widgets
 from constants import *
 from logger import *
 import threading
@@ -42,53 +43,7 @@ class BluetoothReciveThread(threading.Thread):
 
         logging.info("Exit BluetoothThread")
         
-class MessageTextEdit(QtGui.QTextEdit):
-    """This is a specific QTextEditor"""
-    
-    def __init__(self,  parent):
-        super(MessageTextEdit,  self).__init__(parent)
-
-        self.parent = parent
         
-        # Set font size...
-        font = QtGui.QFont()
-        font.setPointSize(12)
-        self.setFont(font)
-                
-    def nextLine(self):
-        """Insert a new line at the top of the QTextEdit"""
-        # Move cursor to the start...
-        self.moveCursor(QtGui.QTextCursor.Start, 0)
-        
-        # Insert new line...
-        self.insertHtml("<br>")
-        self.moveCursor(QtGui.QTextCursor.Start, 0)
-        
-    def newMessage(self, channel, value, level):
-        """Insert a msg in the first line"""
-        # Move cursor to the start...
-        self.moveCursor(QtGui.QTextCursor.Start, 0)
-        
-        # Insert the 3 parts of the string in diffrent colors...
-        self.insertHtml("<br><span style='color:red;'>%s: </span><span style='color:blue;'>%s</span><span style='color:green;'> (%d)</span>" % (channel, value, level))
-        self.moveCursor(QtGui.QTextCursor.Start, 0)
-
-    def keyPressEvent(self,  event):
-        """When Return pressed, send the first line to MainWindow"""
-        
-        # check if the pressed key is return...
-        if event.key() == QtCore.Qt.Key_Return:
-            if event.modifiers() == QtCore.Qt.ControlModifier:
-                event = QtCore.QKeyEvent(QEvent.KeyPress,  Qt.Key_Return, Qt.NoModifier)
-            else:
-                firstLine = self.toPlainText().split("\n")[0].strip()
-                if len(firstLine) > 0:
-                    self.emit(QtCore.SIGNAL("sendMessage"), firstLine)
-                    self.nextLine()
-                return
-
-        QtGui.QTextEdit.keyPressEvent(self,  event)
-
 class MainWindow(QtGui.QMainWindow):
     """Controls the window"""
     
@@ -125,17 +80,13 @@ class MainWindow(QtGui.QMainWindow):
         self.connectionAction.triggered.connect(self.onConnection)
         bluetoothMenu.addAction(self.connectionAction)
         
-        # Create the images for drawing...
-        roomImgSize = QtCore.QSize(self.size().width()*0.7, self.size().height()-(self.menubarHeight*2))
-        self.room_image = QtGui.QImage(roomImgSize, QtGui.QImage.Format_RGB32)
-        self.room_image.fill(QtGui.qRgb(150, 150, 150))
-        robotImgSize = QtCore.QSize(self.size().width()*0.3, self.size().width()*0.3)
-        self.robot_image = QtGui.QImage(robotImgSize, QtGui.QImage.Format_RGB32)
-        self.robot_image.fill(QtGui.qRgb(150, 150, 150))
+        # Insert the widgets...
+        self.room_widget = widgets.Room(self.getRoomImgRect())
+        self.robot_widget = widgets.Robot(self)
+        self.messageTextEdit = widgets.MessageTextEdit(self)
         
-        # Create the command line...
-        self.messageTextEdit = MessageTextEdit(self)
-        self.messageTextEdit.setGeometry(QtCore.QRect(self.size().width()*0.7, self.size().width()*0.3, self.size().width()-self.size().width()*0.7, self.size().height()-self.menubarHeight-self.size().width()*0.3))
+        # Setup the command line...
+        self.messageTextEdit.setGeometry(self.getTextEditRect())
         self.connect(self.messageTextEdit, QtCore.SIGNAL("sendMessage"),  self.onSendMessage)
         
         # Create the queues for the bluetooth data...
@@ -154,6 +105,44 @@ class MainWindow(QtGui.QMainWindow):
         self.bluetoothThread = communication.BluetoothThread(self.bluetoothReciveQueue, self.bluetoothSendQueue)
         self.bluetoothThread.setName("BluetoothThread")
         self.bluetoothThread.start()
+        
+        # Define all channels...
+        self.channels = { "touchSensor" : self.robot_widget.setTouchSensor, 
+                    "infraredSensor" : self.robot_widget.setInfraredSensor, 
+                    "colorSensor" : self.robot_widget.setColorSensor, 
+                    "motorR" : self.robot_widget.setMotorR, 
+                    "motorL" : self.robot_widget.setMotorL, 
+                    "Accel" : self.robot_widget.setAccel, 
+                    "Gyrol" : self.robot_widget.setGyro, 
+                    "Mag" : self.robot_widget.setMag}
+        
+    def getPartingLine(self):
+        """Calculate the coordinates of the parting line"""
+        x = self.size().width()*0.7
+        line = QtCore.QLine(x, self.menubarHeight, x, self.size().height() - self.menubarHeight-1)
+        return line
+        
+    def getRobotImgRect(self):
+        """Calculate the rect of the robot img"""
+        xPositionRobot = self.size().width()*0.7 + 1
+        rect = QtCore.QRect(xPositionRobot, self.menubarHeight, self.size().width()*0.3, self.size().width()*0.3)
+        return rect
+        
+    def getRoomImgRect(self):
+        """Calculate the rect of the room img"""
+        xPositionRoom = self.size().width()*0.7
+        yPositionRoom = self.size().height() - self.menubarHeight *2
+        rect = QtCore.QRect(0, self.menubarHeight,  xPositionRoom, yPositionRoom)
+        return rect
+        
+    def getTextEditRect(self):
+        """Calculate the rect of the MessageTextEdit img"""
+        x = self.size().width()*0.7 + 1
+        y = self.size().width()*0.3 + self.menubarHeight
+        x2 = self.size().width()-self.size().width()*0.7
+        y2 = self.size().height()-self.menubarHeight*2-self.size().width()*0.3
+        rect = QtCore.QRect(x, y, x2, y2)
+        return rect
         
     def onSendMessage(self, text):
         """Send a command of the QTextEdit"""
@@ -181,7 +170,6 @@ class MainWindow(QtGui.QMainWindow):
         elif self.connectionAction.text() == "Disconnect" and self.bluetoothThread.isAlive():
             # Send disconnect signal...
             info("Send disconnect signal")
-            self.bluetoothSendQueue.put(Message(channel="connection", value="disconnect"))
         
     @QtCore.pyqtSlot(str, str, int)
     def onBluetoothEvent(self, channel, value, level):
@@ -204,47 +192,40 @@ class MainWindow(QtGui.QMainWindow):
             self.bluetoothConnected.setText("Disonnected")
             self.bluetoothSendQueue.put(Message(channel="connection", value="disconnect"))
             QtGui.QMessageBox.information(None, "Bluetooth", "Server closed...", QtGui.QMessageBox.Ok)
+        
+        # Execute the function for this channel...
+        elif channel in self.channels:
+            self.channels[channel](value)
                 
     def paintEvent(self, event):
         """Paint the window."""
-        
-        # Calculate the image sizes....
-        xPositionRobot = self.size().width()*0.7 + 1
-        rectRobot = QtCore.QRect(xPositionRobot, self.menubarHeight, self.size().width()*0.3, self.size().width()*0.3)
-        xPositionRoom = self.size().width()*0.7
-        yPositionRoom = self.size().height() - self.menubarHeight *2
-        rectRoom = QtCore.QRect(0, self.menubarHeight,  xPositionRoom, yPositionRoom)
-        
+                
         # Paint the images...
         painter = QtGui.QPainter(self)
-        painter.drawImage(rectRobot, self.robot_image)
-        painter.drawImage(rectRoom, self.room_image)
+        painter.drawImage(self.getRoomImgRect(), self.room_widget)
         
         # Draw parting line...
-        painter.drawLine(xPositionRoom, self.menubarHeight, xPositionRoom, self.size().height() - self.menubarHeight-1)
+        painter.drawLine(self.getPartingLine())
 
     def resizeEvent(self, event):
         """Called if the windowsize changed"""
         
-        # Uptdata TextEdit size...
-        self.messageTextEdit.setGeometry(QtCore.QRect(self.size().width()*0.7, self.size().width()*0.3, self.size().width()-self.size().width()*0.7, self.size().height()-self.menubarHeight-self.size().width()*0.3))
-
-        # Create new images with new size..
-        roomImgSize = QtCore.QSize(self.size().width()*0.7, self.size().height()-(self.menubarHeight*2))
-        self.room_image = QtGui.QImage(roomImgSize, QtGui.QImage.Format_RGB32)
-        self.room_image.fill(QtGui.qRgb(150, 150, 150))
-        robotImgSize = QtCore.QSize(self.size().width()*0.3, self.size().width()*0.3)
-        self.robot_image = QtGui.QImage(robotImgSize, QtGui.QImage.Format_RGB32)
-        self.robot_image.fill(QtGui.qRgb(150, 150, 150))
+        # Update TextEdit size...
+        self.messageTextEdit.setGeometry(self.getTextEditRect())
         
+        # Update Robot widget size...
+        self.robot_widget.setGeometry(self.getRobotImgRect())
+
     def closeEvent(self, event):
         """When the window close, close the server, too"""
         
-        question = QtGui.QMessageBox.question(None, "Connection", "Close server?", "Yes", "No")
+        if self.bluetoothConnected.text() == "Connected":
+            question = QtGui.QMessageBox.question(None, "Connection", "Close server?", "Yes", "No")
 
-        # Close the server...
-        if question == 0:
-            self.bluetoothSendQueue.put(Message(channel="close"))
+            # Close the server...
+            if question == 0:
+                self.bluetoothSendQueue.put(Message(channel="close"))
+                
         
 class RemoteGUI():
     """Create the window"""
