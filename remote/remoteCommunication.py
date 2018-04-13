@@ -1,24 +1,28 @@
 # The remote communication socket
 # Author: Jan-Luca D., Finn G.
 
-from bluetooth import *
 import threading
+
+from bluetooth import *
+
 from constants import *
-from message import Message
 from logger import *
+from message import Message
 from utils import *
 
 s = None
 setLogLevel(logLevel)
 
+
 class BluetoothThread(threading.Thread):
     """Take all signals from outside pyqt and send it to pyqt"""
-    def __init__(self, bluetoothReciveQueue, bluetoothSendQueue):
-        threading.Thread.__init__(self) 
-        
-        self.bluetoothReciveQueue = bluetoothReciveQueue
+
+    def __init__(self, bluetoothReceiveQueue, bluetoothSendQueue):
+        threading.Thread.__init__(self)
+
+        self.bluetoothReceiveQueue = bluetoothReceiveQueue
         self.bluetoothSendQueue = bluetoothSendQueue
-        
+
     def run(self):
         # Connect to bluetooth device...
         info("Connecting to EV3")
@@ -37,20 +41,20 @@ class BluetoothThread(threading.Thread):
                 msg = self.bluetoothSendQueue.get(timeout=1.0)
             except:
                 continue
-                
+
             debug("Get a command in the bluetoothSendQueue: %s" % msg)
-            
+
             # If the message is a disconnect command, exit the Thread...
             if msg.channel == "connection":
                 if msg.value == "disconnect":
                     break
-            
+
             # Send the message...
             self.send(str(msg))
-            
-            # Recive the answer...
+
+            # Receive the answer...
             self.listen()
-        
+
         # Disconnect...
         try:
             self.disconnect()
@@ -88,21 +92,17 @@ class BluetoothThread(threading.Thread):
             info("Select the device to connect to:")
             return nearby_devices[int(input()) - 1][0]
 
-
     def readStoredMAC(self):
         """Read the stored MAC from file"""
         return readFile(".mac.txt")
-
 
     def storeMAC(self, mac):
         """Store the MAC in a file"""
         writeFile(".mac.txt", mac)
 
-
     def hasStoredMAC(self):
         """Check if MAC stored previously"""
         return existsFile(".mac.txt")
-
 
     def connectByLastConnection(self):
         """Read stored MAC and connect to it or search for a device and connect to it"""
@@ -120,7 +120,6 @@ class BluetoothThread(threading.Thread):
                     raise e
         else:
             self.connect(self.searchDevices())
-            
 
     def connect(self, mac):
         """Connect to a bluetooth device"""
@@ -132,18 +131,22 @@ class BluetoothThread(threading.Thread):
         s = BluetoothSocket(RFCOMM)
         s.connect((mac, port))
         info("Connected")
-        
+
         # Inform the GUI...
-        self.bluetoothReciveQueue.put(Message(channel="connection", value="connected"))
+        self.bluetoothReceiveQueue.put(
+            Message(
+                channel="connection", value="connected"))
 
     def disconnect(self):
         """Disconnect from bluetooth device"""
         info("Disconnect from bluetooth device")
         global s
         s.close()
-        
+
         # Inform the GUI...
-        self.bluetoothReciveQueue.put(Message(channel="connection", value="disconnected"))
+        self.bluetoothReceiveQueue.put(
+            Message(
+                channel="connection", value="disconnected"))
 
     def send(self, text):
         """Send data to bluetooth device"""
@@ -153,9 +156,11 @@ class BluetoothThread(threading.Thread):
             s.send(text)
         except OSError as e:
             error("Failed to send: %s" % e)
-            
+
             # Inform the GUI...
-            self.bluetoothReciveQueue.put(Message(channel="connection", value="disconnected"))
+            self.bluetoothReceiveQueue.put(
+                Message(
+                    channel="connection", value="disconnected"))
 
     def listen(self, timeout=1.0):
         """Receive messages with a callback"""
@@ -166,13 +171,17 @@ class BluetoothThread(threading.Thread):
         try:
             data = s.recv(MSGLEN)
         except OSError as e:
-            error("Failed to Recive: %s" % e)
-            
+            error("Failed to Receive: %s" % e)
+
             # Inform GUI...
-            self.bluetoothReciveQueue.put(Message(channel="close", value="disconnected"))
+            self.bluetoothReceiveQueue.put(
+                Message(
+                    channel="close", value="disconnected"))
             return
 
-        info("Recived: %s" % (data))
+        info("Received: %s" % (data))
         data = str(data).split("'")[1]
         fragments = str(data).split(": ")
-        self.bluetoothReciveQueue.put(Message(channel=fragments[0].strip(), value=fragments[1].strip()))
+        self.bluetoothReceiveQueue.put(
+            Message(
+                channel=fragments[0].strip(), value=fragments[1].strip()))
