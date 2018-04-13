@@ -23,9 +23,9 @@ class EV3:
                     "screen" : self.drawScreen, 
                     "motorR" : self.turnRight, 
                     "motorL" : self.turnLeft, 
-                    "Accel" : self.sendAccelData, 
-                    "Gyrol" : self.sendAccelData, 
-                    "Mag" : self.sendAccelData}
+                    "accel" : self.sendAccelData, 
+                    "gyro" : self.sendGyroData, 
+                    "mag" : self.sendMagData}
                     
         # Init screen...
         self.screen = ev3.Screen()
@@ -34,7 +34,7 @@ class EV3:
         self.touchSensor = ev3.TouchSensor()
         self.infraredSensor = ev3.InfraredSensor()
         self.colorSensor = ev3.ColorSensor()
-        #self.mpu9250 = MPU9250.MPU9250()
+        self.mpu9250 = MPU9250.MPU9250()
         
         # Init all motors...
         self.motorR = ev3.LargeMotor('outC')

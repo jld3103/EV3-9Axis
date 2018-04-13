@@ -91,9 +91,13 @@ class MainWindow(QtGui.QMainWindow):
         self.connectionAction.setStatusTip('Connect to EV3')
         self.connectionAction.triggered.connect(self.onConnection)
         bluetoothMenu.addAction(self.connectionAction)
+        
+        # Create the queues for the bluetooth data...
+        self.bluetoothReceiveQueue = queue.Queue()
+        self.bluetoothSendQueue = queue.Queue()
 
         # Insert the widgets...
-        self.room_widget = roomWidget.Room(self.getRoomImgRect())
+        self.room_widget = roomWidget.Room(self.getRoomImgRect(), self.bluetoothSendQueue)
         self.robot_widget = robotWidget.Robot(self)
         self.messageTextEdit = messageTextEditWidget.MessageTextEdit(self)
 
@@ -101,10 +105,6 @@ class MainWindow(QtGui.QMainWindow):
         self.messageTextEdit.setGeometry(self.getTextEditRect())
         self.connect(self.messageTextEdit,
                      QtCore.SIGNAL("sendMessage"), self.onSendMessage)
-
-        # Create the queues for the bluetooth data...
-        self.bluetoothReceiveQueue = queue.Queue()
-        self.bluetoothSendQueue = queue.Queue()
 
         # Connect the bluetoothEvent signal...
         self.bluetoothEvent.connect(self.onBluetoothEvent)
@@ -123,14 +123,14 @@ class MainWindow(QtGui.QMainWindow):
 
         # Define all channels...
         self.channels = {
-            "touchSensor": self.robot_widget.setTouchSensor,
-            "infraredSensor": self.robot_widget.setInfraredSensor,
-            "colorSensor": self.robot_widget.setColorSensor,
-            "motorR": self.robot_widget.setMotorR,
-            "motorL": self.robot_widget.setMotorL,
-            "Accel": self.robot_widget.setAccel,
-            "Gyrol": self.robot_widget.setGyro,
-            "Mag": self.robot_widget.setMag
+            "TouchSensor": [self.robot_widget.setTouchSensor],
+            "InfraredSensor": [self.robot_widget.setInfraredSensor],
+            "ColorSensor": [self.robot_widget.setColorSensor],
+            "MotorR": [self.robot_widget.setMotorR],
+            "MotorL": [self.robot_widget.setMotorL],
+            "Accel": [self.robot_widget.setAccel],
+            "Gyrol": [self.robot_widget.setGyro],
+            "Mag": [self.robot_widget.setMag]
         }
 
     def getPartingLine(self):
@@ -227,7 +227,8 @@ class MainWindow(QtGui.QMainWindow):
 
         # Execute the function for this channel...
         elif channel in self.channels:
-            self.channels[channel](value)
+            for function in self.channels[channel]:
+                function(value)
 
     def paintEvent(self, event):
         """Paint the window."""

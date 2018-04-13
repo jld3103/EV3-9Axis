@@ -234,7 +234,7 @@ class Robot(QtOpenGL.QGLWidget):
         """Init the 3D graphic"""
         
         # Set background color...
-        self.qglClearColor(QtGui.QColor(100, 0,  0))
+        self.qglClearColor(QtGui.QColor(150, 150, 150))
 
         # Init all 3D objects...
         self.initGeometry()
@@ -272,7 +272,7 @@ class Robot(QtOpenGL.QGLWidget):
 
         # Set point of view...
         glLoadIdentity()
-        glTranslate(0, -8, -40)
+        glTranslate(0, -10, -30)
 
         # Rotate the object...
         glRotate(self.yRotDeg, 0, -10, 00)
