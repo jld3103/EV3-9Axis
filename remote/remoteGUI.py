@@ -9,7 +9,9 @@ from message import Message
 import remote.remoteCommunication as communication
 import queue
 from PyQt4 import QtGui,  QtCore
-import remote.widgets as widgets
+import remote.roomWidget as roomWidget
+import remote.robotWidget as robotWidget
+import remote.messageTextEditWidget as messageTextEditWidget
 from constants import *
 from logger import *
 import threading
@@ -81,9 +83,9 @@ class MainWindow(QtGui.QMainWindow):
         bluetoothMenu.addAction(self.connectionAction)
         
         # Insert the widgets...
-        self.room_widget = widgets.Room(self.getRoomImgRect())
-        self.robot_widget = widgets.Robot(self)
-        self.messageTextEdit = widgets.MessageTextEdit(self)
+        self.room_widget = roomWidget.Room(self.getRoomImgRect())
+        self.robot_widget = robotWidget.Robot(self)
+        self.messageTextEdit = messageTextEditWidget.MessageTextEdit(self)
         
         # Setup the command line...
         self.messageTextEdit.setGeometry(self.getTextEditRect())

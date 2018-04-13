@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# This are all widgets for the remoteGUI
+# This widget displays the robot in 3D
 # Author: Finn G.
 
 from PyQt4 import QtGui,  QtCore, QtOpenGL
@@ -317,59 +317,3 @@ class Robot(QtOpenGL.QGLWidget):
         self.parent.statusBar().showMessage('rotation %f' % self.yRotDeg)
         self.updateGL()
 
-class Room(QtGui.QImage):
-    """This class displays the room with all barriers and etc."""
-    
-    def __init__(self, rect, format=QtGui.QImage.Format_RGB32):
-        size = QtCore.QSize(rect.width(), rect.height())
-        super(Room,  self).__init__(size, format)
-        
-        self.fill(QtGui.qRgb(150, 150, 150))
-        
-
-class MessageTextEdit(QtGui.QTextEdit):
-    """This is a specific QTextEditor"""
-    
-    def __init__(self,  parent=None):
-        super(MessageTextEdit,  self).__init__(parent)
-
-        self.parent = parent
-        
-        # Set font size...
-        font = QtGui.QFont()
-        font.setPointSize(12)
-        self.setFont(font)
-                
-    def nextLine(self):
-        """Insert a new line at the top of the QTextEdit"""
-        # Move cursor to the start...
-        self.moveCursor(QtGui.QTextCursor.Start, 0)
-        
-        # Insert new line...
-        self.insertHtml("<br>")
-        self.moveCursor(QtGui.QTextCursor.Start, 0)
-        
-    def newMessage(self, channel, value, level):
-        """Insert a msg in the first line"""
-        # Move cursor to the start...
-        self.moveCursor(QtGui.QTextCursor.Start, 0)
-        
-        # Insert the 3 parts of the string in diffrent colors...
-        self.insertHtml("<br><span style='color:red;'>%s: </span><span style='color:blue;'>%s</span><span style='color:green;'> (%d)</span>" % (channel, value, level))
-        self.moveCursor(QtGui.QTextCursor.Start, 0)
-
-    def keyPressEvent(self,  event):
-        """When Return pressed, send the first line to MainWindow"""
-        
-        # check if the pressed key is return...
-        if event.key() == QtCore.Qt.Key_Return:
-            if event.modifiers() == QtCore.Qt.ControlModifier:
-                event = QtCore.QKeyEvent(QtCore.QEvent.KeyPress,  QtCore.Qt.Key_Return, QtCore.Qt.NoModifier)
-            else:
-                firstLine = self.toPlainText().split("\n")[0].strip()
-                if len(firstLine) > 0:
-                    self.emit(QtCore.SIGNAL("sendMessage"), firstLine)
-                    self.nextLine()
-                return
-
-        QtGui.QTextEdit.keyPressEvent(self,  event)
