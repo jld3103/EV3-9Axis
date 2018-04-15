@@ -123,6 +123,10 @@ class MainWindow(QtGui.QMainWindow):
         self.bluetoothThread.setName("BluetoothThread")
         self.bluetoothThread.start()
         
+        # Add listener...
+        self.addListener("connection", self.handleConnection)
+        self.addListener("close", self.bluetoothServerClosed)
+        
     def addListener(self, channel, callback):
         if not channel in self.channels:
             self.channels[channel] = [callback]
@@ -200,31 +204,31 @@ class MainWindow(QtGui.QMainWindow):
 
         self.messageTextEdit.newMessage(channel, value, level)
 
-        # The client disconnected or connected...
-        if channel == "connection":
-            if value == "connected":
-                self.connectionAction.setText("Disconnect")
-                self.bluetoothConnected.setText("Connected")
-                QtGui.QMessageBox.information(
-                    None, "Bluetooth", "Connected...", QtGui.QMessageBox.Ok)
-            else:
-                self.connectionAction.setText("Connect")
-                self.bluetoothConnected.setText("Disonnected")
-                QtGui.QMessageBox.information(
-                    None, "Bluetooth", "Disonnected...", QtGui.QMessageBox.Ok)
-        # The server closed...
-        elif channel == "close":
-            self.bluetoothConnected.setText("Disonnected")
-            self.bluetoothSendQueue.put(
-                Message(
-                    channel="connection", value="disconnect"))
-            QtGui.QMessageBox.information(
-                None, "Bluetooth", "Server closed...", QtGui.QMessageBox.Ok)
-
         # Execute the function for this channel...
-        elif channel in self.channels:
+        if channel in self.channels:
             for function in self.channels[channel]:
                 function(value)
+                
+    def handleConnection(self, value):
+        """Handle the bluetooth connection"""
+        if value == "connected":
+            self.connectionAction.setText("Disconnect")
+            self.bluetoothConnected.setText("Connected")
+            QtGui.QMessageBox.information(
+                None, "Bluetooth", "Connected...", QtGui.QMessageBox.Ok)
+        else:
+            self.connectionAction.setText("Connect")
+            self.bluetoothConnected.setText("Disonnected")
+            QtGui.QMessageBox.information(
+                None, "Bluetooth", "Disonnected...", QtGui.QMessageBox.Ok)
+                
+    def bluetoothServerClosed(self, value):
+        self.bluetoothConnected.setText("Disonnected")
+        self.bluetoothSendQueue.put(
+            Message(
+                channel="connection", value="disconnect"))
+        QtGui.QMessageBox.information(
+            None, "Bluetooth", "Server closed...", QtGui.QMessageBox.Ok)
 
     def paintEvent(self, event):
         """Paint the window."""
