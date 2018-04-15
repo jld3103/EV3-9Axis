@@ -82,10 +82,10 @@ class EV3:
                 x = int(point.split("|")[0])
                 y = int(point.split("|")[1])
             except:
-                self.bluetoothSendQueue.put(Message(channel="Screen",  value="Value has wrong format (x|y:x|y:...)"))
+                self.bluetoothSendQueue.put(Message(channel="screen",  value="Value has wrong format (x|y:x|y:...)"))
             self.screen.draw.point((x, y))
         self.screen.update()
-        self.bluetoothSendQueue.put(Message(channel="Screen",  value=value))
+        self.bluetoothSendQueue.put(Message(channel="screen",  value=value))
         
     def turnRight(self, value):
         """Turn the right motor"""
@@ -97,9 +97,9 @@ class EV3:
         # Run the motor...
         try:
             self.motorR.run_timed(time_sp=time, speed_sp=speed)
-            self.bluetoothSendQueue.put(Message(channel="MotorR",  value=("%d:%d" % (time, speed))))
+            self.bluetoothSendQueue.put(Message(channel="motorR",  value=("%d:%d" % (time, speed))))
         except:
-            self.bluetoothSendQueue.put(Message(channel="MotorR",  value="Device not connected"))
+            self.bluetoothSendQueue.put(Message(channel="motorR",  value="Device not connected"))
         
     def turnLeft(self, value):
         """Turn the left motor"""
@@ -111,63 +111,63 @@ class EV3:
         # Run the motor...
         try:
             self.motorL.run_timed(time_sp=time, speed_sp=speed)
-            self.bluetoothSendQueue.put(Message(channel="MotorL",  value=("%d:%d" % (time, speed))))
+            self.bluetoothSendQueue.put(Message(channel="motorL",  value=("%d:%d" % (time, speed))))
         except:
-            self.bluetoothSendQueue.put(Message(channel="MotorL",  value="Device not connected"))  
+            self.bluetoothSendQueue.put(Message(channel="motorL",  value="Device not connected"))  
             
     def sendColorValue(self, value):
         if value == "color":
             try:
                 color = self.colorSensor.COLORS[self.colorSensor.color]
-                self.bluetoothSendQueue.put(Message(channel="ColorSensor",  value=color))
+                self.bluetoothSendQueue.put(Message(channel="colorSensor",  value=color))
             except:
-                self.bluetoothSendQueue.put(Message(channel="ColorSensor",  value="Device not connected"))
+                self.bluetoothSendQueue.put(Message(channel="colorSensor",  value="Device not connected"))
         elif value == "rgb":
             try:
                 red = self.colorSensor.red
                 green = self.colorSensor.green
                 blue = self.colorSensor.blue
-                self.bluetoothSendQueue.put(Message(channel="ColorSensor",  value=("%d:%d:%d" % (red, green, blue))))
+                self.bluetoothSendQueue.put(Message(channel="colorSensor",  value=("%d:%d:%d" % (red, green, blue))))
             except:
-                self.bluetoothSendQueue.put(Message(channel="ColorSensor",  value="Device not connected"))
+                self.bluetoothSendQueue.put(Message(channel="colorSensor",  value="Device not connected"))
 
             
     def sendInfraredValue(self, value):
         """"Send the value of the infrared sensor"""
         try:
             value = self.infraredSensor.value()
-            self.bluetoothSendQueue.put(Message(channel="InfraredSensor",  value=value))
+            self.bluetoothSendQueue.put(Message(channel="infraredSensor",  value=value))
         except:
-            self.bluetoothSendQueue.put(Message(channel="InfraredSensor",  value="Device not connected"))
+            self.bluetoothSendQueue.put(Message(channel="infraredSensor",  value="Device not connected"))
         
                 
     def sendTouchValue(self, value):
         """"Send the value of the touch sensor"""
         try:
             value = self.touchSensor.value()
-            self.bluetoothSendQueue.put(Message(channel="TouchSensor",  value=value))
+            self.bluetoothSendQueue.put(Message(channel="touchSensor",  value=value))
         except:
-            self.bluetoothSendQueue.put(Message(channel="TouchSensor",  value="Device not connected"))
+            self.bluetoothSendQueue.put(Message(channel="touchSensor",  value="Device not connected"))
         
     def sendAccelData(self, value):
         """"Send the values of the accelometer"""
         axes = value.split(":")
         accel = mpu9250.readAccel()
         for axis in axes:
-            self.bluetoothSendQueue.put(Message(channel=("Accel%s" % axis.upper()),  value=accel[axis]))
+            self.bluetoothSendQueue.put(Message(channel=("accel%s" % axis.upper()),  value=accel[axis]))
             
     def sendGyroData(self, value):
         """"Send the values of the gyroscope"""
         axes = value.split(":")
         gyro = mpu9250.readGyro()
         for axis in axes:
-            self.bluetoothSendQueue.put(Message(channel=("Gyro%s" % axis.upper()),  value=gyro[axis]))
+            self.bluetoothSendQueue.put(Message(channel=("gyro%s" % axis.upper()),  value=gyro[axis]))
             
     def sendMagData(self, value):
         """"Send the values of the magnetometer"""
         axes = value.split(":")
         mag = mpu9250.readMagnet()
         for axis in axes:
-            self.bluetoothSendQueue.put(Message(channel=("Mag%s" % axis.upper()),  value=mag[axis]))
+            self.bluetoothSendQueue.put(Message(channel=("mag%s" % axis.upper()),  value=mag[axis]))
             
             

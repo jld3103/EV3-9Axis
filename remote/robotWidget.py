@@ -9,6 +9,7 @@ from OpenGL.GL import *
 from constants import *
 from logger import *
 import threading
+import math
 
 setLogLevel(logLevel)
 
@@ -16,12 +17,6 @@ moveX = -8.4
 moveY = 0
 moveZ = -9.75
 
-import math
-from OpenGL.GL import *
-
-moveX = -8.4
-moveY = 3
-moveZ = -9.75
 
 class ObjLoader(threading.Thread):
     def __init__(self, filename, updateEvent):
@@ -190,10 +185,13 @@ class Robot(QtOpenGL.QGLWidget):
         self.objects = []
         
         self.updateEvent.connect(self.paintGL)
+        
+        parent.addListner("infraredSensor", self.setInfraredSensor)
 
     def setTouchSensor(self, value):
         """Set touch sensor value"""
         self.touched = int(value)
+        info("Widget: Touch sensor pressed")
         
     def setInfraredSensor(self, value):
         """Set Infrared sensor value"""
