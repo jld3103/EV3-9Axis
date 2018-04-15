@@ -123,15 +123,13 @@ class MainWindow(QtGui.QMainWindow):
 
         # Define all channels...
         self.channels = {
-            "TouchSensor": [self.robot_widget.setTouchSensor],
-            "InfraredSensor": [self.robot_widget.setInfraredSensor],
-            "ColorSensor": [self.robot_widget.setColorSensor],
-            "MotorR": [self.robot_widget.setMotorR],
-            "MotorL": [self.robot_widget.setMotorL],
-            "Accel": [self.robot_widget.setAccel],
-            "Gyrol": [self.robot_widget.setGyro],
-            "Mag": [self.robot_widget.setMag]
         }
+        
+    def addListner(self, channel, callback):
+        if not channel in self.channels:
+            self.channels[channel] = [callback]
+        else:
+            self.channels[channel].append(callback)
 
     def getPartingLine(self):
         """Calculate the coordinates of the parting line"""
