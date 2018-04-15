@@ -1,7 +1,5 @@
-#!/usr/bin/python3
-
 # This is the main file for the Gui
-# Author: Finn G.
+# Author: Finn G., Jan-Luca D.
 
 version = "1.1"
 

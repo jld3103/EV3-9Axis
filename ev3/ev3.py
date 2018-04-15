@@ -1,7 +1,5 @@
-#!/usr/bin/python3
-
 # This file control the EV3
-# Author: Finn G.
+# Author: Finn G., Jan-Luca D.
 
 import ev3dev.ev3 as ev3
 import ev3.ev3Communication as communication
