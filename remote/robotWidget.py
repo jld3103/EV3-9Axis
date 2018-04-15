@@ -186,12 +186,13 @@ class Robot(QtOpenGL.QGLWidget):
         
         self.updateEvent.connect(self.paintGL)
         
-        parent.addListner("infraredSensor", self.setInfraredSensor)
+        # Add all listener...
+        parent.addListener("touchSensor", self.setTouchSensor)
+        parent.addListener("infraredSensor", self.setInfraredSensor)
 
     def setTouchSensor(self, value):
         """Set touch sensor value"""
         self.touched = int(value)
-        info("Widget: Touch sensor pressed")
         
     def setInfraredSensor(self, value):
         """Set Infrared sensor value"""
@@ -270,7 +271,7 @@ class Robot(QtOpenGL.QGLWidget):
 
         # Set point of view...
         glLoadIdentity()
-        glTranslate(0, -10, -30)
+        glTranslate(0, -9, -30)
 
         # Rotate the object...
         glRotate(self.yRotDeg, 0, -10, 00)

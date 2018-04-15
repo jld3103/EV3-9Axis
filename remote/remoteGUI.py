@@ -90,12 +90,16 @@ class MainWindow(QtGui.QMainWindow):
         self.connectionAction.triggered.connect(self.onConnection)
         bluetoothMenu.addAction(self.connectionAction)
         
+        # Define all channels...
+        self.channels = {
+        }
+        
         # Create the queues for the bluetooth data...
         self.bluetoothReceiveQueue = queue.Queue()
         self.bluetoothSendQueue = queue.Queue()
 
         # Insert the widgets...
-        self.room_widget = roomWidget.Room(self.getRoomImgRect(), self.bluetoothSendQueue)
+        self.room_widget = roomWidget.Room(self, self.getRoomImgRect(), self.bluetoothSendQueue)
         self.robot_widget = robotWidget.Robot(self)
         self.messageTextEdit = messageTextEditWidget.MessageTextEdit(self)
 
@@ -118,12 +122,8 @@ class MainWindow(QtGui.QMainWindow):
             self.bluetoothReceiveQueue, self.bluetoothSendQueue)
         self.bluetoothThread.setName("BluetoothThread")
         self.bluetoothThread.start()
-
-        # Define all channels...
-        self.channels = {
-        }
         
-    def addListner(self, channel, callback):
+    def addListener(self, channel, callback):
         if not channel in self.channels:
             self.channels[channel] = [callback]
         else:

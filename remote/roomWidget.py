@@ -12,10 +12,11 @@ setLogLevel(logLevel)
 class Room(QtGui.QImage):
     """This class displays the room with all barriers and etc."""
     
-    def __init__(self, rect, bluetoothSendQueue, format=QtGui.QImage.Format_RGB32):
+    def __init__(self, parent, rect, bluetoothSendQueue, format=QtGui.QImage.Format_RGB32):
         size = QtCore.QSize(rect.width(), rect.height())
         super(Room,  self).__init__(size, format)
         
+        self.parent = parent
         self.bluetoothSendQueue = bluetoothSendQueue
         
         # Fill image...
