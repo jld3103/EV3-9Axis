@@ -177,7 +177,7 @@ class Robot(QtOpenGL.QGLWidget):
     
     updateEvent = QtCore.pyqtSignal()
     
-    def __init__(self, parent=None):
+    def __init__(self, parent, bluetooth):
         self.parent = parent
         QtOpenGL.QGLWidget.__init__(self, parent)
         self.yRotDeg = 0.0
@@ -187,8 +187,8 @@ class Robot(QtOpenGL.QGLWidget):
         self.updateEvent.connect(self.paintGL)
         
         # Add all listener...
-        parent.addListener("touchSensor", self.setTouchSensor)
-        parent.addListener("infraredSensor", self.setInfraredSensor)
+        bluetooth.addListener("touchSensor", self.setTouchSensor)
+        bluetooth.addListener("infraredSensor", self.setInfraredSensor)
 
     def setTouchSensor(self, value):
         """Set touch sensor value"""

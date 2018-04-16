@@ -3,9 +3,6 @@
 
 version = "1.1"
 
-import queue
-import threading
-
 from PyQt4 import QtCore, QtGui
 
 import remote.messageTextEditWidget as messageTextEditWidget
@@ -19,40 +16,10 @@ from message import Message
 setLogLevel(logLevel)
 
 
-class BluetoothReceiveThread(threading.Thread):
-    """Take all signals from outside pyqt and send it to pyqt"""
-
-    def __init__(self, bluetoothReceiveQueue, bluetoothEvent):
-        threading.Thread.__init__(self)
-
-        self.bluetoothReceiveQueue = bluetoothReceiveQueue
-        self.bluetoothEvent = bluetoothEvent
-
-    def run(self):
-        info("Run BluetoothReceiveThread")
-
-        # wait for bluetooth signals...
-        global alive
-        while alive:
-            try:
-                # Wait max. one second for a signal in the queue...
-                msg = self.bluetoothReceiveQueue.get(timeout=1.0)
-            except:
-                continue
-
-            debug("Get a command in the bluetoothReceiveQueue: %s" % msg)
-
-            # Emit qt signal...
-            self.bluetoothEvent.emit(
-                str(msg.channel), str(msg.value), int(msg.level))
-
-        logging.info("Exit BluetoothThread")
-
-
 class MainWindow(QtGui.QMainWindow):
     """Controls the window"""
 
-    bluetoothEvent = QtCore.pyqtSignal(str, str, int)
+    bluetoothEvent = QtCore.pyqtSignal(Message)
 
     def __init__(self, version):
         QtGui.QMainWindow.__init__(self)
@@ -89,49 +56,29 @@ class MainWindow(QtGui.QMainWindow):
         self.connectionAction.setStatusTip('Connect to EV3')
         self.connectionAction.triggered.connect(self.onConnection)
         bluetoothMenu.addAction(self.connectionAction)
-        
-        # Define all channels...
-        self.channels = {
-        }
-        
-        # Create the queues for the bluetooth data...
-        self.bluetoothReceiveQueue = queue.Queue()
-        self.bluetoothSendQueue = queue.Queue()
-
-        # Insert the widgets...
-        self.room_widget = roomWidget.Room(self, self.getRoomImgRect(), self.bluetoothSendQueue)
-        self.robot_widget = robotWidget.Robot(self)
-        self.messageTextEdit = messageTextEditWidget.MessageTextEdit(self)
-
-        # Setup the command line...
-        self.messageTextEdit.setGeometry(self.getTextEditRect())
-        self.connect(self.messageTextEdit,
-                     QtCore.SIGNAL("sendMessage"), self.onSendMessage)
 
         # Connect the bluetoothEvent signal...
         self.bluetoothEvent.connect(self.onBluetoothEvent)
 
-        # Start the bluetoothThread...
-        bluetoothReceiveThread = BluetoothReceiveThread(
-            self.bluetoothReceiveQueue, self.bluetoothEvent)
-        bluetoothReceiveThread.setName("BluetoothReceiveThread")
-        bluetoothReceiveThread.start()
-
         # Start the Thread for the bluetooth connection...
-        self.bluetoothThread = communication.BluetoothThread(
-            self.bluetoothReceiveQueue, self.bluetoothSendQueue)
-        self.bluetoothThread.setName("BluetoothThread")
-        self.bluetoothThread.start()
+        self.bluetooth = communication.BluetoothThread(self.bluetoothEvent)
+        self.bluetooth.setName("BluetoothThread")
+        self.bluetooth.start()
+
+        # Insert the widgets...
+        self.room_widget = roomWidget.Room(self, self.getRoomImgRect(), self.bluetooth)
+        self.robot_widget = robotWidget.Robot(self, self.bluetooth)
+        self.messageTextEdit = messageTextEditWidget.MessageTextEdit(self)
+        
+        # Setup the command line...
+        self.messageTextEdit.setGeometry(self.getTextEditRect())
+        self.connect(self.messageTextEdit,
+                     QtCore.SIGNAL("sendMessage"), self.onSendMessage)
         
         # Add listener...
-        self.addListener("connection", self.handleConnection)
-        self.addListener("close", self.bluetoothServerClosed)
+        self.bluetooth.addListener("connection", self.handleConnection)
+        self.bluetooth.addListener("close", self.bluetoothServerClosed)
         
-    def addListener(self, channel, callback):
-        if not channel in self.channels:
-            self.channels[channel] = [callback]
-        else:
-            self.channels[channel].append(callback)
 
     def getPartingLine(self):
         """Calculate the coordinates of the parting line"""
@@ -175,11 +122,9 @@ class MainWindow(QtGui.QMainWindow):
 
         # If channel and value exist spit them...
         if len(fragments) == 2:
-            self.bluetoothSendQueue.put(
-                Message(
-                    channel=fragments[0], value=fragments[1]))
+            self.bluetooth.send(Message(channel=fragments[0], value=fragments[1]))
         else:
-            self.bluetoothSendQueue.put(Message(channel=fragments[0]))
+            self.bluetooth.send(Message(channel=fragments[0]))
 
     def onConnection(self):
         """Handle the connect action in the menubar"""
@@ -198,29 +143,26 @@ class MainWindow(QtGui.QMainWindow):
             # Send disconnect signal...
             info("Send disconnect signal")
 
-    @QtCore.pyqtSlot(str, str, int)
-    def onBluetoothEvent(self, channel, value, level):
+    def onBluetoothEvent(self, message):
         """Handle the bluetooth events"""
-
-        self.messageTextEdit.newMessage(channel, value, level)
+        
+        self.messageTextEdit.newMessage(message)
 
         # Execute the function for this channel...
-        if channel in self.channels:
-            for function in self.channels[channel]:
-                function(value)
+        if message.channel in self.bluetooth.channels and not message.value == "Device not connected":
+            for function in self.bluetooth.channels[message.channel]:
+                function(message.value)
                 
     def handleConnection(self, value):
         """Handle the bluetooth connection"""
         if value == "connected":
             self.connectionAction.setText("Disconnect")
             self.bluetoothConnected.setText("Connected")
-            QtGui.QMessageBox.information(
-                None, "Bluetooth", "Connected...", QtGui.QMessageBox.Ok)
+            QtGui.QMessageBox.information(None, "Bluetooth", "Connected...", QtGui.QMessageBox.Ok)
         else:
             self.connectionAction.setText("Connect")
             self.bluetoothConnected.setText("Disonnected")
-            QtGui.QMessageBox.information(
-                None, "Bluetooth", "Disonnected...", QtGui.QMessageBox.Ok)
+            QtGui.QMessageBox.information(None, "Bluetooth", "Disonnected...", QtGui.QMessageBox.Ok)
                 
     def bluetoothServerClosed(self, value):
         self.bluetoothConnected.setText("Disonnected")
@@ -253,12 +195,11 @@ class MainWindow(QtGui.QMainWindow):
         """When the window close, close the server, too"""
 
         if self.bluetoothConnected.text() == "Connected":
-            question = QtGui.QMessageBox.question(None, "Connection",
-                                                  "Close server?", "Yes", "No")
+            question = QtGui.QMessageBox.question(None, "Connection", "Close server?", "Yes", "No")
 
             # Close the server...
             if question == 0:
-                self.bluetoothSendQueue.put(Message(channel="close"))
+                self.bluetooth.send(Message(channel="close"))
 
 
 class RemoteGUI():

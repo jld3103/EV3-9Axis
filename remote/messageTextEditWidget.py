@@ -32,13 +32,13 @@ class MessageTextEdit(QtGui.QTextEdit):
         self.insertHtml("<br>")
         self.moveCursor(QtGui.QTextCursor.Start, 0)
         
-    def newMessage(self, channel, value, level):
+    def newMessage(self, message):
         """Insert a msg in the first line"""
         # Move cursor to the start...
         self.moveCursor(QtGui.QTextCursor.Start, 0)
         
         # Insert the 3 parts of the string in diffrent colors...
-        self.insertHtml("<br><span style='color:red;'>%s: </span><span style='color:blue;'>%s</span><span style='color:green;'> (%d)</span>" % (channel, value, level))
+        self.insertHtml("<br><span style='color:red;'>%s: </span><span style='color:blue;'>%s</span><span style='color:green;'> (%d)</span>" % (message.channel, message.value, message.level))
         self.moveCursor(QtGui.QTextCursor.Start, 0)
 
     def keyPressEvent(self,  event):
