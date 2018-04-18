@@ -10,11 +10,11 @@ from logger import *
 setLogLevel(logLevel)
         
 
-class MessageTextEdit(QtGui.QTextEdit):
+class CommandLine(QtGui.QTextEdit):
     """This is a specific QTextEditor"""
     
     def __init__(self,  parent=None):
-        super(MessageTextEdit,  self).__init__(parent)
+        super(CommandLine,  self).__init__(parent)
 
         self.parent = parent
         
@@ -23,14 +23,6 @@ class MessageTextEdit(QtGui.QTextEdit):
         font.setPointSize(12)
         self.setFont(font)
                 
-    def nextLine(self):
-        """Insert a new line at the top of the QTextEdit"""
-        # Move cursor to the start...
-        self.moveCursor(QtGui.QTextCursor.Start, 0)
-        
-        # Insert new line...
-        self.insertHtml("<br>")
-        self.moveCursor(QtGui.QTextCursor.Start, 0)
         
     def newMessage(self, message):
         """Insert a msg in the first line"""
@@ -38,7 +30,7 @@ class MessageTextEdit(QtGui.QTextEdit):
         self.moveCursor(QtGui.QTextCursor.Start, 0)
         
         # Insert the 3 parts of the string in diffrent colors...
-        self.insertHtml("<br><span style='color:red;'>%s: </span><span style='color:blue;'>%s</span><span style='color:green;'> (%d)</span>" % (message.channel, message.value, message.level))
+        self.insertHtml("<br><span style='color:red;'>%s: </span><span style='color:blue;'>%s</span><br>" % (message.channel, message.value))
         self.moveCursor(QtGui.QTextCursor.Start, 0)
 
     def keyPressEvent(self,  event):
@@ -52,7 +44,7 @@ class MessageTextEdit(QtGui.QTextEdit):
                 firstLine = self.toPlainText().split("\n")[0].strip()
                 if len(firstLine) > 0:
                     self.emit(QtCore.SIGNAL("sendMessage"), firstLine)
-                    self.nextLine()
+                    self.moveCursor(QtGui.QTextCursor.Start, 0)
                 return
 
         QtGui.QTextEdit.keyPressEvent(self,  event)

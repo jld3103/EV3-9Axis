@@ -2,9 +2,7 @@
 # Author: Jan-Luca D., Finn G.
 
 import threading
-
 from bluetooth import *
-
 from constants import *
 from logger import *
 from message import Message
@@ -15,28 +13,35 @@ setLogLevel(logLevel)
 
 
 class BluetoothThread(threading.Thread):
-    """Take all signals from outside pyqt and send it to pyqt"""
+    """Control the bluetooth connection"""
 
-    def __init__(self, bluetoothEvent):
+    def __init__(self, bluetoothEvent, channels={}):
         threading.Thread.__init__(self)
 
         self.bluetoothEvent = bluetoothEvent
         
+        self.connected = False
+        
         # Define all channels...
-        self.channels = {
-        }
+        self.channels = channels
         
     def run(self):
+        """Start connection in a new Thread"""
         # Connect to bluetooth device...
         info("Connecting to EV3")
         try:
             self.connectByLastConnection()
         except Exception as e:
-            error(e)
+            error("Failed to connect: %s" % e)
+            self.bluetoothEvent.emit(Message(channel="connection", value="Deactivated"))
             info("Close bluetooth service")
             return
 
     def addListener(self, channel, callback):
+        """Add a listener for a channel"""
+        
+        debug("Add new listener for the channel '%s': %s" % (channel, callback))
+        
         if not channel in self.channels:
             self.channels[channel] = [callback]
         else:
@@ -45,6 +50,9 @@ class BluetoothThread(threading.Thread):
     def searchDevices(self):
         """Search for bluetooth devices"""
         info("Searching for devices")
+        
+        # Inform the GUI...
+        self.bluetoothEvent.emit(Message(channel="connection", value="Search devices"))
 
         # Search devices
         try:
@@ -59,9 +67,13 @@ class BluetoothThread(threading.Thread):
         else:
             info("Found %d devices" % len(nearby_devices))
         i = 1
+        
+        devices = ""
         for name, addr in nearby_devices:
-            info("%s. %s - %s" % (i, addr, name))
+            devices += "%s - %s|" % (addr, name)
+            debug("%s. %s - %s" % (i, addr, name))
             i += 1
+        devices = devices[:-1]
 
         # Select and return the MAC of device
         if len(nearby_devices) == 0:
@@ -69,8 +81,8 @@ class BluetoothThread(threading.Thread):
         if len(nearby_devices) == 1:
             return nearby_devices[0][0]
         else:
-            info("Select the device to connect to:")
-            return nearby_devices[int(input()) - 1][0]
+            self.bluetoothEvent.emit(Message(channel="selectDevice", value=devices))
+            return None
 
     def readStoredMAC(self):
         """Read the stored MAC from file"""
@@ -95,25 +107,44 @@ class BluetoothThread(threading.Thread):
                 error("Couldn't connect to device with stored MAC")
                 #traceback.print_exc()
                 try:
-                    self.connect(self.searchDevices())
+                    device = self.searchDevices()
+                    if device != None:
+                        self.connect(device)
                 except Exception as e:
                     raise e
         else:
             self.connect(self.searchDevices())
+            
+    def selectedDevice(self, device):
+        """Get the selected device from the GUI"""
+        try:
+            # Try to connect...
+            self.connect(device)
+        except Exception as e:
+            error(e)
+            
+            # Inform the GUI about failing to connect...
+            self.bluetoothEvent.emit(Message(channel="connection", value="Deactivated"))
 
     def connect(self, mac):
         """Connect to a bluetooth device"""
         info("Connecting to MAC " + mac)
         self.storeMAC(mac)
+        
+        # Inform the GUI...
+        self.bluetoothEvent.emit(Message(channel="connection", value="Connecting..."))
 
         # Connect...
         global s
         s = BluetoothSocket(RFCOMM)
         s.connect((mac, port))
         info("Connected")
+        
+        # Save new status...
+        self.connected = True
 
         # Inform the GUI...
-        self.bluetoothEvent.emit(Message(channel="connection", value="connected"))
+        self.bluetoothEvent.emit(Message(channel="connection", value="Connected"))
                 
     def disconnect(self):
         """Disconnect from bluetooth device"""
@@ -126,9 +157,12 @@ class BluetoothThread(threading.Thread):
             error("Faild to disconnect: %s" % e)
             
         info("Close bluetooth service")
+    
+        # Save new status...
+        self.connected = False
 
         # Inform the GUI...
-        self.bluetoothEvent.emit(Message(channel="connection", value="disconnected"))
+        self.bluetoothEvent.emit(Message(channel="connection", value="Disconnected"))
 
     def send(self, message):
         """Send data to bluetooth device"""
@@ -139,9 +173,12 @@ class BluetoothThread(threading.Thread):
             s.send(text)
         except OSError as e:
             error("Failed to send: %s" % e)
+            
+            # Save new status...
+            self.connected = False
 
             # Inform the GUI...
-            self.bluetoothEvent.emit(Message(channel="connection", value="disconnected"))
+            self.bluetoothEvent.emit(Message(channel="connection", value="Disconnected"))
             
         # Listen for answer...
         self.listen()
@@ -156,8 +193,11 @@ class BluetoothThread(threading.Thread):
             data = s.recv(MSGLEN)
         except OSError as e:
             error("Failed to Receive: %s" % e)
+            
+            # Save new status...
+            self.connected = False
 
-            self.bluetoothEvent.emit(Message(channel="connection", value="disconnected"))
+            self.bluetoothEvent.emit(Message(channel="connection", value="Disconnected"))
             return
 
         info("Received: %s" % (data))
@@ -165,4 +205,5 @@ class BluetoothThread(threading.Thread):
         fragments = str(data).split(": ")
         
         # Inform the GUI...
-        self.bluetoothEvent.emit(Message(channel=fragments[0].strip(), value=fragments[1].strip()))
+        if len(fragments) == 2:
+            self.bluetoothEvent.emit(Message(channel=fragments[0].strip(), value=fragments[1].strip()))
