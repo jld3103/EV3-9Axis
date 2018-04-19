@@ -228,8 +228,8 @@ class MainWindow(QtGui.QMainWindow):
             QtGui.QMessageBox.information(None, "Bluetooth", "Connected...", QtGui.QMessageBox.Ok)
         elif value == "Disconnected":
             QtGui.QMessageBox.information(None, "Bluetooth", "Disconnected...", QtGui.QMessageBox.Ok)
-        elif value == "Deactivated":
-            QtGui.QMessageBox.information(None, "Bluetooth", "Please activate bluetooth!", QtGui.QMessageBox.Ok)
+        elif value == "Failed to connect":
+            QtGui.QMessageBox.information(None, "Bluetooth", "Failed to connect!", QtGui.QMessageBox.Ok)
             
     def handleSelectDevice(self, value):
         """Show a dialog for selecting a bluetooth device"""

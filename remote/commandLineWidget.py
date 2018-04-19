@@ -30,7 +30,11 @@ class CommandLine(QtGui.QTextEdit):
         self.moveCursor(QtGui.QTextCursor.Start, 0)
         
         # Insert the 3 parts of the string in diffrent colors...
-        self.insertHtml("<br><span style='color:red;'>%s: </span><span style='color:blue;'>%s</span><br>" % (message.channel, message.value))
+        firstLine = self.toPlainText().split("\n")[0].strip()
+        if len(firstLine) > 0:
+            self.insertHtml("<br><span style='color:red;'>%s: </span><span style='color:blue;'>%s</span><br>" % (message.channel, message.value))
+        else:
+            self.insertHtml("<br><span style='color:red;'>%s: </span><span style='color:blue;'>%s</span>" % (message.channel, message.value))            
         self.moveCursor(QtGui.QTextCursor.Start, 0)
 
     def keyPressEvent(self,  event):

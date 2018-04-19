@@ -33,7 +33,7 @@ class BluetoothThread(threading.Thread):
             self.connectByLastConnection()
         except Exception as e:
             error("Failed to connect: %s" % e)
-            self.bluetoothEvent.emit(Message(channel="connection", value="Deactivated"))
+            self.bluetoothEvent.emit(Message(channel="connection", value="Failed to connect"))
             info("Close bluetooth service")
             return
 
@@ -124,7 +124,7 @@ class BluetoothThread(threading.Thread):
             error(e)
             
             # Inform the GUI about failing to connect...
-            self.bluetoothEvent.emit(Message(channel="connection", value="Deactivated"))
+            self.bluetoothEvent.emit(Message(channel="connection", value="Failed to connect"))
 
     def connect(self, mac):
         """Connect to a bluetooth device"""
