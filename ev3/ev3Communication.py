@@ -6,7 +6,6 @@ import atexit
 from bluetooth import *
 import threading
 from constants import *
-from message import Message
 from logger import *
 from utils import *
 
@@ -16,18 +15,22 @@ s = None
 client = None
 size = MSGLEN
 
-class BluetoothThread(threading.Thread):
+class BluetoothThread():
     """Take all signals from outside pyqt and send it to pyqt"""
-    def __init__(self, bluetoothReciveQueue, bluetoothSendQueue):
+    def __init__(self, channels={}):
         threading.Thread.__init__(self) 
         
         # Set the close listner...
         atexit.register(self.onExit)
         
-        self.bluetoothReciveQueue = bluetoothReciveQueue
-        self.bluetoothSendQueue = bluetoothSendQueue
+        self.connected = False
+        self.isRunning = True
         
-    def run(self):
+        # Create dictionary for the listener...
+        self.channels = channels
+        
+    def start(self):
+        """Create the server in another thread"""
         # Create the bluetooth server...
         info("Create Bluetooth server")
         try:
@@ -36,28 +39,23 @@ class BluetoothThread(threading.Thread):
             error("Failed to create server: %s" % e)
             return
         
-        # Send data until the ev3 programm close...
-        while True:
-            self.listen()
-            try:
-                msg = self.bluetoothSendQueue.get(timeout=1.0)
-            except:
-                continue
-            
-            debug("Get a command in the bluetoothSendQueue: %s" % msg)
-            
-            # Send msg...
-            self.send(str(msg))
-            
-            # If the msg channel is 'close' exit the Thread...
-            if msg.channel == "close":
-                break
-        
-        global s
-        
+    def closeServer(self):
+        """Close the server"""
         # Close bluetooth server...
         s.close()
-        info("Close bluetooth service")
+        info("Close bluetooth server")
+        
+        # Set status to disconnected...
+        self.connected = False
+        self.isRunning = False
+        
+    def addListener(self, channel, callback):
+        """Add a listener for a channel"""
+        
+        debug("Add new listener for the channel '%s': %s" % (channel, callback))
+        
+        self.channels[channel] = callback       
+            
 
     def creatServer(self, mac=None):
         """Start the bluetooth server socket"""
@@ -80,6 +78,9 @@ class BluetoothThread(threading.Thread):
         s.bind((mac, port))
         s.listen(backlog)
         
+        # Update status...
+        self.isRunning = True
+        
         # Wait for a client...
         self.waitForClient()
             
@@ -90,6 +91,9 @@ class BluetoothThread(threading.Thread):
             global client
             client, clientInfo = s.accept()
             info("New Connection")
+            
+            # Update status...
+            self.connected = True
         except:
             pass
         
@@ -98,11 +102,21 @@ class BluetoothThread(threading.Thread):
         global s
         if s != None:
             s.close()
+        
+        # Update status...
+        self.connected = False
+        self.isRunning = False
 
-    def send(self, text):
+    def send(self, msg):
         """Send data to bluetooth device"""
-        debug("Send '%s' to bluetooth device" % text)
+        
+        # Get string of the message...
+        text = str(msg)
+        
+        info("Send '%s' to bluetooth device" % text)
         global client
+        
+        # Send the string...
         client.send(text)
 
     def listen(self):
@@ -112,15 +126,26 @@ class BluetoothThread(threading.Thread):
             # Wait for data...
             data = client.recv(size)
         except:
+            # Update status...
+            self.connected = False
             error("Client disconnected")
+            
+            # Wait for a new client...
             self.waitForClient()
-            return
+            return -1
         
-        debug("Recived msg: %s" % str(data))
+        info("Recived msg: %s" % str(data))
         
         # Split the data in channel and value...
         data = str(data).split("'")[1]
         fragments = str(data).split(": ")
         
-        # Put recived message in the queue...
-        self.bluetoothReciveQueue.put(Message(channel=fragments[0].strip(), value=fragments[1].strip()))
+        channel = fragments[0].strip()
+        value = fragments[1].strip()
+        
+        # Check if the channel is in channels...
+        if channel in self.channels:
+            # Execute listener...
+            return [self.channels[channel], value]
+            
+        return None
