@@ -120,17 +120,6 @@ class BluetoothThread(threading.Thread):
                     raise e
         else:
             self.connect(self.searchDevices())
-            
-    def selectedDevice(self, device):
-        """Get the selected device from the GUI"""
-        try:
-            # Try to connect...
-            self.connect(device)
-        except Exception as e:
-            error(e)
-            
-            # Inform the GUI about failing to connect...
-            self.bluetoothEvent.emit(Message(channel="connection", value="Failed to connect"))
 
     def connect(self, mac):
         """Connect to a bluetooth device"""
