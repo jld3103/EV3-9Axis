@@ -133,11 +133,10 @@ class MainWindow(QtGui.QMainWindow):
         # Insert the widgets...
         self.room_widget = roomWidget.Room(self, self.getRoomImgRect(), self.bluetooth)
         self.robot_widget = robotWidget.Robot(self, self.bluetooth)
-        self.commandLine = commandLineWidget.CommandLine(self)
+        self.commandLine = commandLineWidget.CommandLine(self, self.bluetooth)
         
         # Setup the command line...
         self.commandLine.setGeometry(self.getTextEditRect())
-        self.connect(self.commandLine, QtCore.SIGNAL("sendMessage"), self.onSendMessage)
         
         # Add listener...
         self.bluetooth.addListener("connection", self.handleConnection)
@@ -176,19 +175,6 @@ class MainWindow(QtGui.QMainWindow):
         ) * 0.3
         rect = QtCore.QRect(x, y, x2, y2)
         return rect
-
-    def onSendMessage(self, text):
-        """Send a command of the QTextEdit"""
-        info("send msg: %s" % text)
-
-        # Split the text in channel and value...
-        fragments = text.split(": ")
-
-        # If channel and value exist spit them...
-        if len(fragments) == 2:
-            self.bluetooth.send(Message(channel=fragments[0], value=fragments[1]))
-        else:
-            self.bluetooth.send(Message(channel=fragments[0]))
 
     def onConnection(self):
         """Handle the connect action in the menubar"""
