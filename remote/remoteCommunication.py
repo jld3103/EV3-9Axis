@@ -15,7 +15,7 @@ setLogLevel(logLevel)
 class BluetoothThread(threading.Thread):
     """Control the bluetooth connection"""
 
-    def __init__(self, bluetoothEvent, channels={}):
+    def __init__(self, bluetoothEvent, macAddress=None, channels={}):
         threading.Thread.__init__(self)
 
         self.bluetoothEvent = bluetoothEvent
@@ -24,6 +24,8 @@ class BluetoothThread(threading.Thread):
         
         # Define all channels...
         self.channels = channels
+        
+        self.macAddress = macAddress
         
     def run(self):
         """Start connection in a new Thread"""
@@ -100,8 +102,12 @@ class BluetoothThread(threading.Thread):
         """Read stored MAC and connect to it or search for a device and connect to it"""
         if self.hasStoredMAC():
             try:
-                # Connect to stored device mac
-                self.connect(self.readStoredMAC())
+                # Connect to stored device mac...
+                if self.macAddress == None:
+                    self.connect(self.readStoredMAC())
+                # Connect to given address...
+                else:
+                    self.connect(self.macAddress)
             except:
                 # If device not visible or online search for others
                 error("Couldn't connect to device with stored MAC")
@@ -145,6 +151,11 @@ class BluetoothThread(threading.Thread):
 
         # Inform the GUI...
         self.bluetoothEvent.emit(Message(channel="connection", value="Connected"))
+        
+        # Listen for messages...
+        listenThread = threading.Thread(target=self.listen)
+        listenThread.setName("ListenThread")
+        listenThread.start()
                 
     def disconnect(self):
         """Disconnect from bluetooth device"""
@@ -179,31 +190,39 @@ class BluetoothThread(threading.Thread):
 
             # Inform the GUI...
             self.bluetoothEvent.emit(Message(channel="connection", value="Disconnected"))
-            
-        # Listen for answer...
-        self.listen()
 
     def listen(self):
         """Receive messages with a callback"""
         global s
         global MSGLEN
-
-        info("Wait for msg...")
-        try:
-            data = s.recv(MSGLEN)
-        except OSError as e:
-            error("Failed to Receive: %s" % e)
-            
-            # Save new status...
-            self.connected = False
-
-            self.bluetoothEvent.emit(Message(channel="connection", value="Disconnected"))
-            return
-
-        info("Received: %s" % (data))
-        data = str(data).split("'")[1]
-        fragments = str(data).split(": ")
         
-        # Inform the GUI...
-        if len(fragments) == 2:
-            self.bluetoothEvent.emit(Message(channel=fragments[0].strip(), value=fragments[1].strip()))
+        info("Listening...")
+        
+        while self.connected:
+            info("Wait for msg...")
+            try:
+                data = s.recv(MSGLEN)
+            except OSError:
+                error("Failed to Receive")
+                
+                if self.connected:
+                    # Update status...
+                    self.connected = False
+                    
+                    # Inform the GUI...
+                    self.bluetoothEvent.emit(Message(channel="connection", value="Disconnected"))
+                
+                # Stop listening...
+                info("Stop listening")
+                return
+
+            info("Received: %s" % (data))
+            data = str(data).split("'")[1]
+            fragments = str(data).split(": ")
+            
+            # Inform the GUI...
+            if len(fragments) == 2:
+                self.bluetoothEvent.emit(Message(channel=fragments[0].strip(), value=fragments[1].strip()))
+                
+        info("Stop listening")
+        

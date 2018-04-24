@@ -20,14 +20,14 @@ class SelectDeviceDialog(QtGui.QDialog):
     
     selectedDevice = None
     
-    def __init__(self, parent, devices, bluetooth):
+    def __init__(self, parent, devices):
         QtGui.QDialog.__init__(self, parent)
         
         self.setWindowTitle("Select Device")
         self.setMinimumSize(QtCore.QSize(390, 160))
         self.setMaximumSize(QtCore.QSize(390, 160))
         
-        self.bluetooth = bluetooth
+        self.parent = parent
         
         # Set background color...
         p = self.palette()
@@ -66,9 +66,13 @@ class SelectDeviceDialog(QtGui.QDialog):
         device = self.comboBox.currentText()
         info("Selected %s" % device)
         
-        # Connect to device...
+        # Get mac address...
         mac = device.split("-")[1].strip()
-        self.bluetooth.selectedDevice(mac)
+        
+        # Start the Thread for the bluetooth connection with the selected device...
+        self.parent.bluetooth = communication.BluetoothThread(self.parent.bluetoothEvent, macAddress=mac)
+        self.parent.bluetooth.setName("BluetoothThread")
+        self.parent.bluetooth.start()
         
         # Close dialog...
         self.close()
@@ -233,7 +237,7 @@ class MainWindow(QtGui.QMainWindow):
             
     def handleSelectDevice(self, value):
         """Show a dialog for selecting a bluetooth device"""
-        dialog = SelectDeviceDialog(self, value, self.bluetooth)
+        dialog = SelectDeviceDialog(self, value)
         dialog.show()
                 
     def bluetoothServerClosed(self, value):
@@ -267,12 +271,14 @@ class MainWindow(QtGui.QMainWindow):
     def closeEvent(self, event):
         """When the window close, close the server, too"""
 
-        if self.bluetoothConnected.text() == "Connected":
+        if self.bluetooth.connected:
             question = QtGui.QMessageBox.question(None, "Connection", "Close server?", "Yes", "No")
 
             # Close the server...
             if question == 0:
                 self.bluetooth.send(Message(channel="close"))
+                
+            self.bluetooth.disconnect()
 
 
 class RemoteGUI():

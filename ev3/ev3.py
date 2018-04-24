@@ -8,6 +8,7 @@ from message import Message
 from constants import *
 from logger import *
 import queue
+import time
 
 class EV3:
     """Controls the EV3"""
@@ -32,6 +33,7 @@ class EV3:
         
         # Start the Thread for the bluetooth connection...
         self.bluetooth = communication.BluetoothThread()
+        self.bluetooth.setName("BluetoothThread")
         self.bluetooth.start()
         
         # Add bluetooth listener...
@@ -46,33 +48,14 @@ class EV3:
         self.bluetooth.addListener("mag", self.sendMagData)
         self.bluetooth.addListener("close", self.close)
         
-        # Start programm...
-        self.start()
         
-    def start(self):
-        #TODO: Replace the if/elif with a dictionary
-        
-        # Execute all commands from the server...
-        while self.bluetooth.isRunning:
-            # Get command...
-            command = self.bluetooth.listen()
-            
-            # Execute command...
-            if command == -1:
-                continue
-            elif command != None:
-                function = command[0]
-                function(command[1])
-            else:
-                self.bluetooth.send(Message("Undefined channel"))
-                
-        info("Exit main thread")
-        
-    def close(self, value):
+    def close(self, *args):
         self.bluetooth.closeServer()
         self.bluetooth.send(Message(channel="close",  value="Closed server"))
                 
-    def drawScreen(self, value):
+    def drawScreen(self, *args):
+        """Draw point on the screen"""
+        value = "".join(args)
         points = value.split(":")
         for point in points:
             try:
@@ -84,8 +67,9 @@ class EV3:
         self.screen.update()
         self.bluetooth.send(Message(channel="screen",  value=value))
         
-    def turnRight(self, value):
+    def turnRight(self, *args):
         """Turn the right motor"""
+        value = "".join(args)
         # Get time and speed...
         fragments = value.split(":")
         time=int(fragments[0].strip())
@@ -98,8 +82,9 @@ class EV3:
         except:
             self.bluetooth.send(Message(channel="motorR",  value="Device not connected"))
         
-    def turnLeft(self, value):
+    def turnLeft(self, *args):
         """Turn the left motor"""
+        value = "".join(args)
         # Get time and speed...
         fragments = value.split(":")
         time=int(fragments[0].strip())
@@ -112,7 +97,8 @@ class EV3:
         except:
             self.bluetooth.send(Message(channel="motorL",  value="Device not connected"))  
             
-    def sendColorValue(self, value):
+    def sendColorValue(self, *args):
+        value = "".join(args)
         if value == "color":
             try:
                 color = self.colorSensor.COLORS[self.colorSensor.color]
@@ -129,8 +115,9 @@ class EV3:
                 self.bluetooth.send(Message(channel="colorSensor",  value="Device not connected"))
 
             
-    def sendInfraredValue(self, value):
+    def sendInfraredValue(self, *args):
         """"Send the value of the infrared sensor"""
+        value = "".join(args)
         try:
             value = self.infraredSensor.value()
             self.bluetooth.send(Message(channel="infraredSensor",  value=value))
@@ -138,8 +125,10 @@ class EV3:
             self.bluetooth.send(Message(channel="infraredSensor",  value="Device not connected"))
         
                 
-    def sendTouchValue(self, value):
+    def sendTouchValue(self, *args):
         """"Send the value of the touch sensor"""
+        value = "".join(args)
+        info(str(args))
         try:
             value = self.touchSensor.value()
             self.bluetooth.send(Message(channel="touchSensor",  value=value))
@@ -148,20 +137,23 @@ class EV3:
         
     def sendAccelData(self, value):
         """"Send the values of the accelometer"""
+        value = "".join(args)
         axes = value.split(":")
         accel = mpu9250.readAccel()
         for axis in axes:
             self.bluetooth.send(Message(channel=("accel%s" % axis.upper()),  value=accel[axis]))
             
-    def sendGyroData(self, value):
+    def sendGyroData(self, *args):
         """"Send the values of the gyroscope"""
+        value = "".join(args)
         axes = value.split(":")
         gyro = mpu9250.readGyro()
         for axis in axes:
             self.bluetooth.send(Message(channel=("gyro%s" % axis.upper()),  value=gyro[axis]))
             
-    def sendMagData(self, value):
+    def sendMagData(self, *args):
         """"Send the values of the magnetometer"""
+        value = "".join(args)
         axes = value.split(":")
         mag = mpu9250.readMagnet()
         for axis in axes:
