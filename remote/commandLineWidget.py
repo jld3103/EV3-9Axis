@@ -65,7 +65,7 @@ class CommandLine(QtGui.QTextEdit):
             self.bluetooth.send(Message(channel=fragments[0], value=fragments[1]))
         else:
             self.bluetooth.send(Message(channel=fragments[0]))
-            
+        
     def selectFirstLine(self):
         """"Select the first line of the QTextEdit"""
         
@@ -74,18 +74,17 @@ class CommandLine(QtGui.QTextEdit):
         
         # Get cursor...
         cursor = self.textCursor()
-        
         # Set first cursor position...
         cursor.setPosition(0)
-        
         # Set second cursor position...
         cursor.setPosition(len(firstLine), QtGui.QTextCursor.KeepAnchor)
-        
         # Set the cursor in the QTextEdit...
         self.setTextCursor(cursor)
             
     def keyPressEvent(self,  event):
         """Handle the keys"""
+        
+        info(self.textCursor().anchor())
         
         # check if the pressed key is return...
         if event.key() == QtCore.Qt.Key_Return:
@@ -103,6 +102,8 @@ class CommandLine(QtGui.QTextEdit):
                     self.moveCursor(QtGui.QTextCursor.Start, 0)
                     self.insertHtml("<span>>>> <span>")
                     # Update messages...
+                    if firstLine in self.allMessages:
+                        del self.allMessages[self.allMessages.index(firstLine)]
                     self.allMessages.insert(0, firstLine)
                     self.currentMessage = 0
                 return
@@ -146,7 +147,22 @@ class CommandLine(QtGui.QTextEdit):
             # If the cursor is not in the edit area, ignore all key events...
             firstLine = self.toPlainText().split("\n")[0]
             if self.textCursor().position() < 4 or self.textCursor().position() > len(firstLine):
-                return       
-        
+                return    
+             
+        # Set selection...
+        firstLine = self.toPlainText().split("\n")[0] 
+        if self.textCursor().anchor() < 4:
+             # Get cursor...
+            cursor = self.textCursor()
+            # Set second cursor position...
+            cursor.setPosition(4, QtGui.QTextCursor.MoveAnchor)   
+            self.setTextCursor(cursor)
+        elif self.textCursor().anchor() > len(firstLine):
+             # Get cursor...
+            cursor = self.textCursor()
+            # Set second cursor position...
+            cursor.setPosition(len(firstLine), QtGui.QTextCursor.MoveAnchor)        
+            self.setTextCursor(cursor)
+
         # Give Qt the signal...
         QtGui.QTextEdit.keyPressEvent(self,  event)
