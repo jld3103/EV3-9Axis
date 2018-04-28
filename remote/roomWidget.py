@@ -15,28 +15,30 @@ class Square():
     def __init__(self, grid, x=None, y=None, state=None):
         self.grid = grid
         
-        self.X = x
-        self.Y = y
+        self._x = x
+        self._y = y
 
         self.state = state
         
     def x(self):
         """Get x coordinate in the room"""
-        if self.X == None:
+        if self._x == None:
+            # Get position in the grid...
             for line in self.grid.grid:
                 if self in line:
                     return line.index(self)
         else:
-            return self.X
+            return self._x
         
     def y(self):
         """Get y coordinate in the room"""
-        if self.Y == None:
+        if self._y == None:
+            # Get position in the grid...
             for line in self.grid.grid:
                 if self in line:
                     return self.grid.grid.index(line)
         else:
-            return self.Y
+            return self._y
                 
     def rect(self):
         """Calculate the rect of the square"""
@@ -90,8 +92,8 @@ class Grid():
         self.parent = parent
         
         # Settings...
-        self.showUndefinedSquares = True
-        self.zoom = 0.2
+        self.showUndefinedSquares = False
+        self.zoom = 0.8
         self.center = True
         self.scale = True
         self.squareSize = 20
@@ -179,7 +181,7 @@ class Grid():
             error("Square is not defined")
             
     def getSquareAtCoordinate(self, x, y):
-        """"""
+        """Return the square in the grid with the given coodinate"""
         # Notice the x and y position of the square...
         squarePosX = 0
         squarePosY = 0
@@ -227,7 +229,7 @@ class Grid():
                 if square.state == 0:
                     painter.fillRect(square.rect(), QtGui.QColor(0, 0, 0)) 
                 if square.state == 1:
-                    painter.fillRect(square.rect(), QtGui.QColor(250, 250, 250)) 
+                    painter.fillRect(square.rect(), QtGui.QColor(250, 250, 250))
                 x += 1
             y += 1
             
@@ -235,6 +237,27 @@ class Grid():
         painter.end()
         self.parent.modified = True
         self.parent.update()
+        
+    def load(self, filename):
+        file = open(filename, "r")
+        
+        for line in file:
+            values = line.split(" - ")
+            coordinates = values[0].split(":")
+            x = int(coordinates[0])
+            y = int(coordinates[1])
+            state = int(values[1].strip())
+            
+            self.addSquare(x, y, state)
+        
+    def save(self, filename):
+        file = open(filename, "w")
+        
+        for line in self.grid:
+            for square in line:
+                if square.state != None:
+                    file.write("%d:%d - %d\n" % (square.x(), square.y(), square.state))
+        file.close()
 
 class RoomWidget(QtGui.QWidget):
     """This class displays the room with all barriers and etc."""
@@ -252,13 +275,16 @@ class RoomWidget(QtGui.QWidget):
         self.grid = Grid(self)
         
         # Check if mouse moved...
-        self.moved = False
+        self.moved = 0
         
         # Fill image...
         self.image.fill(QtGui.qRgb(150, 150, 150))
         
         # Save old mouse position...
         self.mousePos = None
+        
+        # Load old grid...
+        self.grid.load("remote/textures/grid.txt")
                 
     def contextMenu(self, pos):
         """show the context menu"""
@@ -269,9 +295,17 @@ class RoomWidget(QtGui.QWidget):
         self.menu.addAction("center", self.onCenter)
         self.menu.addAction("scale", self.onScale)
         self.menu.addAction("reset zoom", self.onResetZoom)
+        self.menu.addAction("reset grid", self.onResetGrid)
         
         # Show the menu on the click position...
         self.menu.exec_(self.mapToGlobal(pos))
+        
+    def onResetGrid(self):
+        """Reset the grid"""
+        self.grid = Grid(self)
+        
+        # Draw the image...
+        self.grid.draw(self.image)
         
     def onResetZoom(self):
         """Set zoom to default"""
@@ -318,8 +352,8 @@ class RoomWidget(QtGui.QWidget):
         self.grid.draw(self.image)
         
     def mouseReleaseEvent(self, event):
-        """When the mouse wasn't move, find square on the click position"""
-        if not self.moved:
+        """When the mouse wasn't moved, find square on the click position"""
+        if self.moved < 2:
             square = self.grid.getSquareAtCoordinate(event.x(), event.y())
             
             if not square == None:
@@ -339,7 +373,7 @@ class RoomWidget(QtGui.QWidget):
         """Called when the mouse is pressed"""
         
         # Update moved...
-        self.moved = False
+        self.moved = 0
         
         if event.button() == QtCore.Qt.RightButton:
             # If it's a right click, open the context menu...
@@ -351,11 +385,14 @@ class RoomWidget(QtGui.QWidget):
     def mouseMoveEvent(self, event):
         """Get difference to the last mouse event"""
         
-        # Update moved...
-        self.moved = True
-        
         # Get difference to the last position...
         difference = event.pos() - self.mousePos
+        
+        # Update moved...
+        if difference.x() + difference.y() < 0:
+            self.moved -= difference.x() + difference.y()
+        else:
+            self.moved += difference.x() + difference.y()
         
         # Update start position...
         self.grid.startPos += difference
@@ -396,3 +433,6 @@ class RoomWidget(QtGui.QWidget):
         self.image.fill(QtGui.qRgb(150, 150, 150))
         
         self.grid.draw(self.image)
+        
+    def closeEvent(self, event):
+        self.grid.save("remote/textures/grid.txt")

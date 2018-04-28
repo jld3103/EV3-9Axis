@@ -252,6 +252,8 @@ class MainWindow(QtGui.QMainWindow):
 
     def closeEvent(self, event):
         """When the window close, close the server, too"""
+        
+        self.room_widget.closeEvent(event)
 
         if self.bluetooth.connected:
             question = QtGui.QMessageBox.question(None, "Connection", "Close server?", "Yes", "No")
