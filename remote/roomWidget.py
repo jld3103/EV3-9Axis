@@ -1,9 +1,7 @@
-#!/usr/bin/python3
-
 # This widget displays the room
-# Author: Finn G.
+# Author: Finn G., Jan-Luca D.
 
-from PyQt4 import QtGui,  QtCore
+from PyQt4 import QtGui, QtCore
 from constants import *
 from logger import *
 
@@ -23,7 +21,7 @@ class Square():
     def x(self):
         """Get x coordinate in the room"""
         if self._x == None:
-            # Get position in the grid...
+            # Get x position in the grid...
             for line in self.grid.grid:
                 if self in line:
                     return line.index(self)
@@ -33,7 +31,7 @@ class Square():
     def y(self):
         """Get y coordinate in the room"""
         if self._y == None:
-            # Get position in the grid...
+            # Get y position in the grid...
             for line in self.grid.grid:
                 if self in line:
                     return self.grid.grid.index(line)
@@ -48,23 +46,23 @@ class Square():
         height = self.grid.parent.height()
         
         # Get the size of the squares...
-        squareWidht = int(width / (self.grid.sizeX))
+        squareWidth = int(width / (self.grid.sizeX))
         squareHeight = int(height / (self.grid.sizeY))
         
-        # Take the smaller site for the width and height of the squares...
+        # Take the smaller side for the width and height of the squares...
         
-        self.grid.scaledSquareSize = (min(squareWidht, squareHeight) - 3)
+        self.grid.scaledSquareSize = (min(squareWidth, squareHeight))
         
         if self.grid.scale:
             self.grid.squareSize = self.grid.scaledSquareSize
             
         squareSizeZoomed = self.grid.squareSize * self.grid.zoom
         
-        # Calculate the border for drawing the romm in the center of the image...
+        # Calculate the border for drawing the room in the center of the image...
         borderLeft = (width - self.grid.sizeX*(squareSizeZoomed+1)) / 2
         borderTop = (height - self.grid.sizeY*(squareSizeZoomed+1)) / 2
         
-        # Get start position of the square...
+        # Get the start position of the square...
         if self.grid.center:
             self.grid.startPosition = QtCore.QPoint(borderLeft+self.x()*(squareSizeZoomed+1), borderTop+self.y()*(squareSizeZoomed+1))
             self.grid.startPos = QtCore.QPoint(borderLeft, borderTop)
@@ -113,6 +111,7 @@ class Grid():
             
         # Update zoom factor to the scaled square size...
         factor = self.scaledSquareSize / self.squareSize
+        
         self.zoom /= factor
         
         # Scale the grid...
@@ -121,14 +120,14 @@ class Grid():
     def addSquare(self, x, y, state):
         """Add a square with the state in the grid"""
         
-        # If the x coordinate bigger than the current grid, increase the grid...
+        # If the x coordinate is bigger than the current grid, increase the grid...
         if x > self.sizeX-1:
             for i in range(x-self.sizeX+1):
                 for line in self.grid:
                     line.append(Square(self))
                 self.sizeX += 1
         
-        # If the y coordinate bigger than the current grid, increase the grid...
+        # If the y coordinate is bigger than the current grid, increase the grid...
         if y > self.sizeY-1:
             for i in range(y-self.sizeY+1):
                 line = []
@@ -137,7 +136,7 @@ class Grid():
                 self.grid.append(line)
                 self.sizeY += 1
         
-        # If the x coordinate smaller than zero, add columns at the left site...
+        # If the x coordinate is smaller than zero, add columns at the left site...
         if x < 0:
             index = 0
             for line in self.grid:
@@ -152,7 +151,7 @@ class Grid():
             # Set the x coordinate to zero...
             x = 0
 
-        # If the y coordinate smaller than zero, add columns at the top...
+        # If the y coordinate is smaller than zero, add rows at the top...
         if y < 0:
             for i in range(y*-1):
                 line = []
@@ -170,15 +169,15 @@ class Grid():
             # Update image...
             self.draw(self.parent.image)
         else:
-            error("Square already defined")
+            debug("Square already defined")
             return
             
     def updateSquareState(self, x, y, state):
-        # Set the square on the given state...
+        # Set the square state to the given state...
         try:
             self.grid[y][x].updateState(state)
         except:
-            error("Square is not defined")
+            debug("Square is not defined")
             
     def getSquareAtCoordinate(self, x, y):
         """Return the square in the grid with the given coodinate"""
@@ -313,7 +312,7 @@ class RoomWidget(QtGui.QWidget):
     def onResetZoom(self):
         """Set zoom to default"""
         
-        # Set zoom to defaul...
+        # Set zoom to default...
         self.grid.zoom = 1.0
         
         # Scale and center the grid only one time...
