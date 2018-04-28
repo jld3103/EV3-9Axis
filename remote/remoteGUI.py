@@ -37,7 +37,7 @@ class SelectDeviceDialog(QtGui.QDialog):
         # Get list of devices...
         self.devices = devices.split("|")
         
-        # Create Combo bock...
+        # Create Combo box...
         self.comboBox = QtGui.QComboBox(self)
         self.comboBox.setGeometry(10, 20, 360, 22)
         self.comboBox.addItems(self.devices)
@@ -131,7 +131,7 @@ class MainWindow(QtGui.QMainWindow):
         self.bluetooth.start()
 
         # Insert the widgets...
-        self.room_widget = roomWidget.Room(self, self.getRoomImgRect(), self.bluetooth)
+        self.room_widget = roomWidget.RoomWidget(self, self.bluetooth)
         self.robot_widget = robotWidget.Robot(self, self.bluetooth)
         self.commandLine = commandLineWidget.CommandLine(self, self.bluetooth)
         
@@ -238,21 +238,17 @@ class MainWindow(QtGui.QMainWindow):
     def paintEvent(self, event):
         """Paint the window."""
 
-        # Paint the images...
-        painter = QtGui.QPainter(self)
-        painter.drawImage(self.getRoomImgRect(), self.room_widget)
-
         # Draw parting line...
+        painter = QtGui.QPainter(self)
         painter.drawLine(self.getPartingLine())
 
     def resizeEvent(self, event):
         """Called if the windowsize changed"""
 
-        # Update TextEdit size...
+        # Update TextEdit sizes...
         self.commandLine.setGeometry(self.getTextEditRect())
-
-        # Update Robot widget size...
         self.robot_widget.setGeometry(self.getRobotImgRect())
+        self.room_widget.setGeometry(self.getRoomImgRect())
 
     def closeEvent(self, event):
         """When the window close, close the server, too"""
