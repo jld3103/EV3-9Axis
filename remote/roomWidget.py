@@ -239,9 +239,9 @@ class Grid():
         self.parent.update()
         
     def load(self, filename):
-        file = open(filename, "r")
-        
         try:
+            file = open(filename, "r")
+        
             for line in file:
                 values = line.split(" - ")
                 coordinates = values[0].split(":")
