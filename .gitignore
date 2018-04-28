@@ -107,3 +107,5 @@ EV3-9Axis\.e4p
 __init__\.py
 
 \.mac\.txt
+
+remote/textures/grid\.txt
