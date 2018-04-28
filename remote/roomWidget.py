@@ -241,14 +241,17 @@ class Grid():
     def load(self, filename):
         file = open(filename, "r")
         
-        for line in file:
-            values = line.split(" - ")
-            coordinates = values[0].split(":")
-            x = int(coordinates[0])
-            y = int(coordinates[1])
-            state = int(values[1].strip())
-            
-            self.addSquare(x, y, state)
+        try:
+            for line in file:
+                values = line.split(" - ")
+                coordinates = values[0].split(":")
+                x = int(coordinates[0])
+                y = int(coordinates[1])
+                state = int(values[1].strip())
+                
+                self.addSquare(x, y, state)
+        except:
+            error("Cannot found file: %s" % filename)
         
     def save(self, filename):
         file = open(filename, "w")
