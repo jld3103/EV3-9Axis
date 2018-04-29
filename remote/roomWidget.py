@@ -201,6 +201,10 @@ class Grid():
                     t = t.previous
             else:
                 self.finding = False
+                # Draw the path
+                for i in range(len(self.path)):
+                    self.path[i].inPath = True
+                self.draw(self.parent.image)
                 info("No solution!")
 
     def heuristic(self, a, b):
