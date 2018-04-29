@@ -17,6 +17,8 @@ moveX = -8.4
 moveY = 0
 moveZ = -9.75
 
+defaultColor = [0.39, 0.39, 0.39, 1.0]
+
 
 class ObjLoader(threading.Thread):
     def __init__(self, filename, updateEvent):
@@ -26,7 +28,7 @@ class ObjLoader(threading.Thread):
         self.updateEvent = updateEvent
         self.changeYZ = False
 
-        self.color = [0.5, 0.5, 0.5, 1.0]
+        self.color = defaultColor
                 
         self.vertices = []
         self.triangle_faces = []
@@ -104,7 +106,7 @@ class ObjLoader(threading.Thread):
         except IOError:
             error("Could not open the .obj file...")
             
-    def setColor(self, r=0.5, g=0.5, b=0.5):
+    def setColor(self, r=defaultColor[0], g=defaultColor[1], b=defaultColor[2]):
         self.color = [r, g, b, 1.0]
             
     def getNormal(self, a, b, c):
@@ -192,7 +194,7 @@ class Robot(QtOpenGL.QGLWidget):
     def __init__(self, parent, bluetooth):
         self.parent = parent
         QtOpenGL.QGLWidget.__init__(self, parent)
-        self.yRotDeg = 0.0
+        self.yRotDeg = 45
         
         self.objects = { "brick" : "brick.obj", 
                                 "distanceSensorConnector" : "distance_sensor_connector.obj", 
@@ -206,25 +208,68 @@ class Robot(QtOpenGL.QGLWidget):
                                 "motorsConnectorTop" : "motors_connector_top.obj", 
                                 "motorsConnectorBottem" : "motors_connector_bottem.obj", 
                                 "touchSensorConnector" : "touch_sensor_connector.obj", 
-                                "touchSensor" : "touch_sensor.obj"}
+                                "touchSensor" : "touch_sensor.obj", 
+                                "colorSensor" : "color_sensor.obj"}
         
         self.updateEvent.connect(self.paintGL)
         
         # Add all listener...
         bluetooth.addListener("touchSensor", self.setTouchSensor)
+        bluetooth.addListener("colorSensor", self.setColorSensor)
+        bluetooth.addListener("infraredSensor", self.setDistanceSensor)
+        
+        self.oldMousePosition = 0
 
     def setTouchSensor(self, value):
         """Set touch sensor value"""
+        
+        # If the touch sensor is pressed, set the color to red...
         if int(value) == 1:
             self.objects["touchSensor"].setColor(1, 0, 0)
+        # If the color sensor is not pressed, set the color to default...
         else:
             self.objects["touchSensor"].setColor()
+            
+    def setColorSensor(self, value):
+        """Set the color of the color sensor"""
+        
+        # Get the rgb values...
+        rgb = value.split(":")
+        if len(rgb) == 3:
+            # Put the values in the correct format...
+            r = int(rgb[0]) / 255
+            g = int(rgb[1]) / 255
+            b = int(rgb[2]) / 255
+            
+            # Set the color of the color sensor...
+            self.objects["colorSensor"].setColor(r, g, b)
+            
+    def setDistanceSensor(self, value):
+        """Set the color of the distance sensor (green=high / red=near)"""
+        
+        # Convert value in an interger...
+        value = int(value)
+        
+        # Set the max value of the sensor...
+        maxValue = 100
+        
+        # Calculate the color steps for each value...
+        steps = 510 / maxValue
+        
+        # Calculate the color (From red to green)...
+        colorG = min((value * steps) / 255, 1.0)
+        colorR = 1
+        if colorG == 1:
+            colorR = (255 - (value -50) * steps) / 255
+        
+        # Set the color...
+        self.objects["distanceSensor"].setColor(colorR, colorG, 0)
 
     def initializeGL(self):
         """Init the 3D graphic"""
         
         # Set background color...
-        self.qglClearColor(QtGui.QColor(150, 150, 150))
+        self.qglClearColor(QtGui.QColor(255, 255, 255))
 
         # Init all 3D objects...
         self.initGeometry()
@@ -262,7 +307,7 @@ class Robot(QtOpenGL.QGLWidget):
 
         # Set point of view...
         glLoadIdentity()
-        glTranslate(0, -9, -30)
+        glTranslate(0, -9, -35)
 
         # Rotate the object...
         glRotate(self.yRotDeg, 0, -10, 00)
@@ -286,11 +331,18 @@ class Robot(QtOpenGL.QGLWidget):
             objFile.setName(self.objects[object]+" Thread")
             objFile.start()
             self.objects[object] = objFile
-            
 
     def spin(self, degrees=None):
         """Spin the 3D object"""
         self.yRotDeg =  (self.yRotDeg - degrees) % 360.0
-        self.parent.statusBar().showMessage('rotation %f' % self.yRotDeg)
         self.updateGL()
+        
+    def mousePressEvent(self, event):
+        """Set the old mouse position on the click position"""
+        self.oldMousePosition = event.x()
+        
+    def mouseMoveEvent(self, event):
+        """Spin the robot"""
+        self.spin((event.x()-self.oldMousePosition)/4)
+        self.oldMousePosition = event.x()
 
