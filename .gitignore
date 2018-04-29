@@ -111,3 +111,7 @@ __init__\.py
 remote/grid\.txt
 
 *.swp
+
+\.settings\.txt
+
+remote/textures/grid\.txt

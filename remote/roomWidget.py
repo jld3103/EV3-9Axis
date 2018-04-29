@@ -453,6 +453,11 @@ class RoomWidget(QtGui.QWidget):
 
     def onCenter(self):
         """Center the image"""
+        
+        self.grid.center = True
+        
+        # Draw the image...
+        self.grid.draw(self.image)
 
     def mouseReleaseEvent(self, event):
         """When the mouse wasn't moved, find square on the click position"""
