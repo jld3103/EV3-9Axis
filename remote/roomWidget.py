@@ -132,11 +132,6 @@ class Grid():
         self.scaledSquareSize = 20
         self.startPos = QtCore.QPoint(0, 0)
 
-        # Load the old grid
-        self.load("remote/textures/grid.txt")
-
-        # Run the A*
-        self.findOnesWay(self.getSquare(5, 5), self.getSquare(10, 10))
 
     def findOnesWay(self, start, end):
         """Execute the A*"""
@@ -398,6 +393,12 @@ class RoomWidget(QtGui.QWidget):
 
         # Save old mouse position...
         self.mousePos = None
+        
+        # Load the old grid
+        self.grid.load("remote/textures/grid.txt")
+
+        # Run the A*
+        self.grid.findOnesWay(self.grid.getSquare(5, 5), self.grid.getSquare(10, 10))
 
     def contextMenu(self, pos):
         """show the context menu"""
