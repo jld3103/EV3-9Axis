@@ -206,6 +206,7 @@ class Robot(QtOpenGL.QGLWidget):
                                 "motorsConnectorTop" : "motors_connector_top.obj",
                                 "motorsConnectorBottem" : "motors_connector_bottem.obj",
                                 "touchSensorConnector" : "touch_sensor_connector.obj",
+                                "touchSensorHead" : "touch_sensor_head.obj", 
                                 "touchSensor" : "touch_sensor.obj",
                                 "colorSensor" : "color_sensor.obj"}
 
@@ -223,10 +224,10 @@ class Robot(QtOpenGL.QGLWidget):
 
         # If the touch sensor is pressed, set the color to red...
         if int(value) == 1:
-            self.objects["touchSensor"].setColor(1, 0, 0)
+            self.objects["touchSensorHead"].setColor(1, 0, 0)
         # If the color sensor is not pressed, set the color to default...
         else:
-            self.objects["touchSensor"].setColor()
+            self.objects["touchSensorHead"].setColor()
 
     def setColorSensor(self, value):
         """Set the color of the color sensor"""
