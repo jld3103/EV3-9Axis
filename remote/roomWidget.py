@@ -116,6 +116,10 @@ class Grid():
         self.current = self.grid[0][0]
         self.current.updateState(False)
 
+        # Store sets
+        self.openSet = []
+        self.closedSet = []
+
         # Define the grid sizes...
         self.sizeX = 1
         self.sizeY = 1
@@ -125,6 +129,7 @@ class Grid():
 
         # Settings...
         self.showUndefinedSquares = True
+        self.showSets = True
         self.zoom = 0.8
         self.center = True
         self.scale = True
@@ -336,6 +341,10 @@ class Grid():
             for square in line:
                 if square.state == None and self.showUndefinedSquares:
                     square.draw(painter, (100, 100, 100))
+                if square in self.openSet and self.showSets:
+                    square.draw(painter, (0, 255, 0))
+                if square in self.closedSet and self.showSets:
+                    square.draw(painter, (255, 0, 0))
                 if square.state == 0:
                     square.draw(painter, (0, 0, 0))
                 if square.state == 1:
