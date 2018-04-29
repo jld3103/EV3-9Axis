@@ -10,7 +10,7 @@ setLogLevel(logLevel)
 
 class Square():
     """This class describes a square"""
-    def __init__(self, grid, x=None, y=None, state=None):
+    def __init__(self, grid, x = None, y = None, state = None):
         self.grid = grid
 
         self._x = x
@@ -88,15 +88,15 @@ class Square():
         squareSizeZoomed = self.grid.squareSize * self.grid.zoom
 
         # Calculate the border for drawing the room in the center of the image...
-        borderLeft = (width - self.grid.sizeX*(squareSizeZoomed+1)) / 2
-        borderTop = (height - self.grid.sizeY*(squareSizeZoomed+1)) / 2
+        borderLeft = (width - self.grid.sizeX*(squareSizeZoomed + 1)) / 2
+        borderTop = (height - self.grid.sizeY*(squareSizeZoomed + 1)) / 2
 
         # Get the start position of the square...
         if self.grid.center:
-            self.grid.startPosition = QtCore.QPoint(borderLeft+self.x()*(squareSizeZoomed+1), borderTop+self.y()*(squareSizeZoomed+1))
+            self.grid.startPosition = QtCore.QPoint(borderLeft + self.x() * (squareSizeZoomed + 1), borderTop + self.y() * (squareSizeZoomed + 1))
             self.grid.startPos = QtCore.QPoint(borderLeft, borderTop)
         else:
-            self.grid.startPosition = QtCore.QPoint(self.grid.startPos.x()+self.x()*(squareSizeZoomed+1), self.grid.startPos.y()+self.y()*(squareSizeZoomed+1))
+            self.grid.startPosition = QtCore.QPoint(self.grid.startPos.x() + self.x() * (squareSizeZoomed + 1), self.grid.startPos.y() + self.y() * (squareSizeZoomed + 1))
 
         # Return the rect...
         return QtCore.QRect(self.grid.startPosition.x(), self.grid.startPosition.y(), squareSizeZoomed, squareSizeZoomed)
@@ -241,15 +241,15 @@ class Grid():
         """Add a square with the state in the grid"""
 
         # If the x coordinate is bigger than the current grid, increase the grid...
-        if x > self.sizeX-1:
-            for i in range(x-self.sizeX+1):
+        if x > self.sizeX - 1:
+            for i in range(x - self.sizeX + 1):
                 for line in self.grid:
                     line.append(Square(self))
                 self.sizeX += 1
 
         # If the y coordinate is bigger than the current grid, increase the grid...
-        if y > self.sizeY-1:
-            for i in range(y-self.sizeY+1):
+        if y > self.sizeY - 1:
+            for i in range(y - self.sizeY + 1):
                 line = []
                 for j in range(self.sizeX):
                     line.append(Square(self))
@@ -260,26 +260,26 @@ class Grid():
         if x < 0:
             index = 0
             for line in self.grid:
-                for i in range(x*-1):
+                for i in range(x * -1):
                     line.insert(0, Square(self))
                 index += 1
-            self.sizeX += x*-1
+            self.sizeX += x* -1
 
             # Set start position...
-            self.startPos.setX(self.startPos.x()-((self.squareSize*self.zoom+1)*(x*-1)))
+            self.startPos.setX(self.startPos.x() - ((self.squareSize * self.zoom + 1) * (x * -1)))
             # Set the x coordinate to zero...
             x = 0
 
         # If the y coordinate is smaller than zero, add rows at the top...
         if y < 0:
-            for i in range(y*-1):
+            for i in range(y * -1):
                 line = []
                 for j in range(self.sizeX):
                     line.append(Square(self))
                 self.grid.insert(0, line)
                 self.sizeY += 1
                 # Set start position...
-                self.startPos.setY(self.startPos.y()-(self.squareSize*self.zoom+1))
+                self.startPos.setY(self.startPos.y() - (self.squareSize * self.zoom + 1))
             y = 0
         # Set the square on the given state...
         self.updateSquareState(x, y, state)
@@ -306,7 +306,7 @@ class Grid():
         # Find the square with the given coordinates...
         while True:
             # Get the rect...
-            square = Square(self, x=squarePosX, y=squarePosY)
+            square = Square(self, x = squarePosX, y = squarePosY)
             rect =  square.rect()
 
             # If coordinate in rect, return the position...
@@ -406,7 +406,7 @@ class RoomWidget(QtGui.QWidget):
 
         # Save old mouse position...
         self.mousePos = None
-        
+
         # Load the old grid
         self.grid.load("remote/textures/grid.txt")
 
@@ -539,3 +539,4 @@ class RoomWidget(QtGui.QWidget):
 
     def closeEvent(self, event):
         self.grid.save("remote/textures/grid.txt")
+
