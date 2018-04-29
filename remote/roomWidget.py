@@ -408,7 +408,7 @@ class RoomWidget(QtGui.QWidget):
         self.mousePos = None
 
         # Load the old grid
-        self.grid.load("remote/textures/grid.txt")
+        self.grid.load(gridFile)
 
         # Run the A*
         self.grid.findOnesWay(self.grid.getSquare(5, 5), self.grid.getSquare(10, 10))
@@ -538,5 +538,5 @@ class RoomWidget(QtGui.QWidget):
         self.grid.draw(self.image)
 
     def closeEvent(self, event):
-        self.grid.save("remote/textures/grid.txt")
+        self.grid.save(gridFile)
 

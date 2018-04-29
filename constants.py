@@ -9,3 +9,4 @@ MSGLEN = 1024
 port = 3
 logLevel = INFO
 alive = True
+gridFile = "remote/grid.txt"
