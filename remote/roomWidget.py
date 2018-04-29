@@ -132,14 +132,11 @@ class Grid():
         self.scaledSquareSize = 20
         self.startPos = QtCore.QPoint(0, 0)
 
+        # Load the old grid
+        self.load("remote/textures/grid.txt")
+
         # Run the A*
         self.findOnesWay(self.getSquare(5, 5), self.getSquare(10, 10))
-
-    def addNeighbours(self):
-        """Add neighbours for all squares"""
-        for i in range(self.sizeY):
-            for j in range(self.sizeX):
-                self.grid[i - 1][j - 1].addNeighbours()
 
     def findOnesWay(self, start, end):
         """Execute the A*"""
@@ -152,9 +149,11 @@ class Grid():
         self.path = []
         self.finding = True
 
-        self.addNeighbours()
-
         self.openSet.append(self.start)
+
+        for i in range(len(self.grid)):
+            for j in range(len(self.grid[i])):
+                self.grid[i][j].addNeighbours()
 
         while self.finding:
             # Check if way possible
@@ -278,20 +277,14 @@ class Grid():
                 # Set start position...
                 self.startPos.setY(self.startPos.y()-(self.squareSize*self.zoom+1))
             y = 0
-
         # Set the square on the given state...
-        if self.getSquare(x, y).state == None:
-            self.updateSquareState(x, y, state)
-            # Update image...
-            self.draw(self.parent.image)
-        else:
-            debug("Square already defined")
-            return
+        self.updateSquareState(x, y, state)
+        # Update image...
+        self.draw(self.parent.image)
 
     def updateSquareState(self, x, y, state):
         """Update square and add neighbours"""
         self.getSquare(x, y).updateState(state)
-        self.addNeighbours()
 
     def getSquare(self, x, y):
         """Get a square from x and y"""
@@ -370,7 +363,6 @@ class Grid():
                 state = bool(values[1].strip())
 
                 self.addSquare(x, y, state)
-            self.grid.addNeighbours()
         except:
             debug("Cannot find file: %s" % filename)
 
@@ -406,9 +398,6 @@ class RoomWidget(QtGui.QWidget):
 
         # Save old mouse position...
         self.mousePos = None
-
-        # Load old grid...
-        self.grid.load("remote/textures/grid.txt")
 
     def contextMenu(self, pos):
         """show the context menu"""
