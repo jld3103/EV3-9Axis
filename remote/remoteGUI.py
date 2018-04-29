@@ -71,7 +71,7 @@ class SelectDeviceDialog(QtGui.QDialog):
         mac = device.split("-")[1].strip()
         
         # Start the Thread for the bluetooth connection with the selected device...
-        self.parent.bluetooth = communication.BluetoothThread(self.parent.bluetoothEvent, macAddress=mac)
+        self.parent.bluetooth = communication.BluetoothThread(self.parent.bluetoothEvent, macAddress=mac, channels=self.parent.bluetooth.channels)
         self.parent.bluetooth.setName("BluetoothThread")
         self.parent.bluetooth.start()
         
@@ -136,6 +136,12 @@ class MainWindow(QtGui.QMainWindow):
         self.showUndefinedSquaresAction = QtGui.QAction(text, self)
         self.showUndefinedSquaresAction.triggered.connect(self.onShowUndefinedSquares)
         roomMenu.addAction(self.showUndefinedSquaresAction)        
+        text = "&Show sets"
+        if self.settings.get("showSets"):
+            text = "&Hide sets"
+        self.showSetsAction = QtGui.QAction(text, self)
+        self.showSetsAction.triggered.connect(self.onShowSets)
+        roomMenu.addAction(self.showSetsAction)
 
         # Connect the bluetoothEvent signal...
         self.bluetoothEvent.connect(self.onBluetoothEvent)
@@ -193,6 +199,16 @@ class MainWindow(QtGui.QMainWindow):
         ) * 0.3
         rect = QtCore.QRect(x, y, x2, y2)
         return rect
+        
+    def onShowSets(self):
+        if self.settings.get("showSets"):
+            self.settings.set("showSets", False)
+            self.showSetsAction.setText("Show sets")
+        else:
+            self.settings.set("showSets", True)
+            self.showSetsAction.setText("Hide sets")
+        self.room_widget.updateImage()
+
         
     def onShowUndefinedSquares(self):
         if self.settings.get("showUndefinedSquares"):

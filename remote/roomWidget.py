@@ -14,6 +14,8 @@ class Square():
 
         self._x = x
         self._y = y
+        
+        self.modified = True
 
         self.state = state # None is not discovered, True is a wall, False is floor
         self.inPath = False
@@ -23,24 +25,25 @@ class Square():
         self.f = 0
         self.g = 0
         self.h = 0
-
-    def addNeighbours(self):
-        """Add the neighbours if possible"""
+        
+    def getNeighbours(self):
         x = self.x()
         y = self.y()
         cols = self.grid.sizeX
         rows = self.grid.sizeY
-        self.neighbours = []
+        neighbours = []
 
         # Check if in coordinate system
         if x < cols - 1:
-            self.neighbours.append(self.grid.getSquare(x + 1, y))
+            neighbours.append(self.grid.getSquare(x + 1, y))
         if y < rows - 1:
-            self.neighbours.append(self.grid.getSquare(x, y + 1))
+            neighbours.append(self.grid.getSquare(x, y + 1))
         if x > 0:
-            self.neighbours.append(self.grid.getSquare(x - 1, y))
+            neighbours.append(self.grid.getSquare(x - 1, y))
         if y > 0:
-            self.neighbours.append(self.grid.getSquare(x, y - 1))
+            neighbours.append(self.grid.getSquare(x, y - 1))
+            
+        return neighbours
 
     def x(self):
         """Get x coordinate in the room"""
@@ -103,7 +106,9 @@ class Square():
 
     def updateState(self, newState):
         """Update the square state"""
-        self.state = newState
+        if newState != self.state:
+            self.state = newState
+            self.modified = True
 
 class Grid():
     """This class manage the squares"""
@@ -111,11 +116,11 @@ class Grid():
         # Define the grid with only one undefined square...
         self.grid = [[Square(self)]]
 
-        # Store the location of the EV3
+        # Store the location of the EV3...
         self.current = self.grid[0][0]
         self.current.updateState(False)
 
-        # Store sets
+        # Store sets...
         self.openSet = []
         self.closedSet = []
 
@@ -125,9 +130,11 @@ class Grid():
 
         # Define parent...
         self.parent = parent
+        
+        # Notice if the grid is modified...
+        self.modified = True
 
         # Settings...
-        self.showSets = True
         self.zoom = 0.8
         self.center = True
         self.scale = True
@@ -149,11 +156,7 @@ class Grid():
 
         self.openSet.append(self.start)
 
-        for i in range(len(self.grid)):
-            for j in range(len(self.grid[i])):
-                self.grid[i][j].addNeighbours()
-
-        while self.finding:
+        while self.finding: #TODO: Go the shortest way with the fewest corners (Turning the robot need much time and can be incorrect)
             # Check if way possible
             if len(self.openSet) > 0:
                 winner = 0
@@ -173,9 +176,11 @@ class Grid():
 
                 self.openSet.remove(current)
                 self.closedSet.append(current)
+                
+                currentNeighbours = current.getNeighbours()
 
-                for i in range(len(current.neighbours)):
-                    neighbour = current.neighbours[i]
+                for i in range(len(currentNeighbours)):
+                    neighbour = currentNeighbours[i]
                     newPath = False
                     # Check if g should be updated
                     if not neighbour in self.closedSet and neighbour.state != True:
@@ -327,7 +332,8 @@ class Grid():
         """Draw the image"""
 
         # Reset old image...
-        image.fill(QtGui.qRgb(150, 150, 150))
+        if self.modified:
+            image.fill(QtGui.qRgb(150, 150, 150))
 
         # Create the painter...
         painter = QtGui.QPainter(image)
@@ -337,20 +343,26 @@ class Grid():
         for line in self.grid:
             x = 0
             for square in line:
-                if square.state == None and self.parent.settings.get("showUndefinedSquares"):
-                    square.draw(painter, (100, 100, 100))
-                if square in self.openSet and self.showSets:
-                    square.draw(painter, (0, 255, 0))
-                if square in self.closedSet and self.showSets:
-                    square.draw(painter, (255, 0, 0))
-                if square.state == 0:
-                    square.draw(painter, (0, 0, 0))
-                if square.state == 1:
-                    square.draw(painter, (250, 250, 250))
-                if square.inPath:
-                    square.draw(painter, (0, 0, 255))
+                if self.modified or square.modified:
+                    if square.state == 1:
+                        square.draw(painter, (250, 250, 250))
+                    elif square.inPath:
+                        square.draw(painter, (0, 0, 255))
+                    elif square in self.openSet and self.parent.settings.get("showSets"):
+                        square.draw(painter, (0, 255, 0))
+                    elif square in self.closedSet and self.parent.settings.get("showSets"):
+                        square.draw(painter, (255, 0, 0))
+                    elif square.state == 0:
+                        square.draw(painter, (0, 0, 0))
+                    elif square.state == None and self.parent.settings.get("showUndefinedSquares"):
+                        square.draw(painter, (100, 100, 100))
+                        
+                    square.modified = False
+                    
                 x += 1
             y += 1
+            
+        self.modified = False
 
         # End painter and update the image...
         painter.end()
@@ -430,6 +442,7 @@ class RoomWidget(QtGui.QWidget):
         self.grid = Grid(self)
 
         # Draw the image...
+        self.grid.modified = True
         self.grid.draw(self.image)
 
     def onResetZoom(self):
@@ -445,6 +458,7 @@ class RoomWidget(QtGui.QWidget):
         self.grid.center = True
 
         # Draw the image...
+        self.grid.modified = True
         self.grid.draw(self.image)
 
         # Reset scaling and centering...
@@ -457,6 +471,7 @@ class RoomWidget(QtGui.QWidget):
         self.grid.center = True
         
         # Draw the image...
+        self.grid.modified = True
         self.grid.draw(self.image)
 
     def mouseReleaseEvent(self, event):
@@ -511,6 +526,7 @@ class RoomWidget(QtGui.QWidget):
         self.grid.center = False
 
         # Draw the image...
+        self.grid.modified = True
         self.grid.draw(self.image)
 
     def wheelEvent(self, event):
@@ -518,6 +534,7 @@ class RoomWidget(QtGui.QWidget):
         self.grid.setZoom(event.delta())
 
         # Draw the image...
+        self.grid.modified = True
         self.grid.draw(self.image)
 
     def paintEvent(self, event):
@@ -534,6 +551,7 @@ class RoomWidget(QtGui.QWidget):
         """Update the image"""
         
         # Draw the image...
+        self.grid.modified = True
         self.grid.draw(self.image)
 
     def resizeImage(self, image, newSize):
@@ -544,7 +562,9 @@ class RoomWidget(QtGui.QWidget):
         # Create a new image with new size and re-draw the rail network
         self.image = QtGui.QImage(newSize, QtGui.QImage.Format_RGB32)
         self.image.fill(QtGui.qRgb(150, 150, 150))
-
+        
+        # Paint the image...
+        self.grid.modified = True
         self.grid.draw(self.image)
 
     def closeEvent(self, event):
