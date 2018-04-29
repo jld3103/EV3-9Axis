@@ -25,7 +25,9 @@ class ObjLoader(threading.Thread):
         self.filename = filename
         self.updateEvent = updateEvent
         self.changeYZ = False
-        
+
+        self.color = [0.5, 0.5, 0.5, 1.0]
+                
         self.vertices = []
         self.triangle_faces = []
         self.quad_faces = []
@@ -102,6 +104,9 @@ class ObjLoader(threading.Thread):
         except IOError:
             error("Could not open the .obj file...")
             
+    def setColor(self, r=0.5, g=0.5, b=0.5):
+        self.color = [r, g, b, 1.0]
+            
     def getNormal(self, a, b, c):
         """Calculate the normal of a triangles face"""
 
@@ -138,6 +143,8 @@ class ObjLoader(threading.Thread):
                 normal = self.normals[int(n[n.find("/")+1:])-1]
                 # Set normal...
                 glNormal3fv(normal)
+                # Set color...
+                glMaterialfv(GL_FRONT, GL_DIFFUSE, self.color)
                 for f in (face):
                     # Set vertex...
                     glVertex3fv(self.vertices[int(f[:f.find("/")])-1])
@@ -153,6 +160,8 @@ class ObjLoader(threading.Thread):
                 normal = self.normals[int(n[n.find("/")+1:])-1]
                 # Set normal...
                 glNormal3fv(normal)
+                # Set color...
+                glMaterialfv(GL_FRONT, GL_DIFFUSE, self.color)
                 for f in (face):
                     # Set vertex...
                     glVertex3fv(self.vertices[int(f[:f.find("/")])-1])
@@ -165,7 +174,10 @@ class ObjLoader(threading.Thread):
                 glBegin(GL_POLYGON)
                 n = face[0]
                 normal = self.normals[int(n[n.find("/")+1:])-1] 
+                # Set normal...
                 glNormal3fv(normal)
+                # Set color...
+                glMaterialfv(GL_FRONT, GL_DIFFUSE, self.color)
                 for f in (face):
                     # Set vertex...
                     glVertex3fv(self.vertices[int(f[:f.find("/")])-1])
@@ -182,52 +194,31 @@ class Robot(QtOpenGL.QGLWidget):
         QtOpenGL.QGLWidget.__init__(self, parent)
         self.yRotDeg = 0.0
         
-        self.objects = []
+        self.objects = { "brick" : "brick.obj", 
+                                "distanceSensorConnector" : "distance_sensor_connector.obj", 
+                                "distanceSensor" : "distance_sensor.obj", 
+                                "motorR" : "motor_right.obj", 
+                                "motorL" : "motor_left.obj", 
+                                "wheelR" : "wheel_right.obj", 
+                                "wheelL" : "wheel_left.obj", 
+                                "wheelBack" : "wheel_back.obj", 
+                                "wheelBackConnector" : "wheel_back_connector.obj", 
+                                "motorsConnectorTop" : "motors_connector_top.obj", 
+                                "motorsConnectorBottem" : "motors_connector_bottem.obj", 
+                                "touchSensorConnector" : "touch_sensor_connector.obj", 
+                                "touchSensor" : "touch_sensor.obj"}
         
         self.updateEvent.connect(self.paintGL)
         
         # Add all listener...
         bluetooth.addListener("touchSensor", self.setTouchSensor)
-        bluetooth.addListener("infraredSensor", self.setInfraredSensor)
 
     def setTouchSensor(self, value):
         """Set touch sensor value"""
-        self.touched = int(value)
-        
-    def setInfraredSensor(self, value):
-        """Set Infrared sensor value"""
-        self.distance = int(value)
-        
-    def setColorSensor(self, value):
-        """Set color sensor value"""
-        fragments = value.split(":")
-        if fragments[0] == "rgb":
-            self.colorRGB['r'] = int(fragments[1])
-            self.colorRGB['g'] = int(fragments[2])
-            self.colorRGB['b'] = int(fragments[3])
+        if int(value) == 1:
+            self.objects["touchSensor"].setColor(1, 0, 0)
         else:
-            self.colorName = value
-        
-    def setMotorR(self, value):
-        """Set motor right value"""
-        pass
-        
-    def setMotorL(self, value):
-        """Set motor left value"""
-        pass
-        
-    def setAccel(self, value):
-        """Set accel sensor value"""
-        pass
-
-    def setGyro(self, value):
-        """Set gyro sensor value"""
-        pass
-
-    def setMag(self, value):
-        """Set mag sensor value"""
-        pass
-        
+            self.objects["touchSensor"].setColor()
 
     def initializeGL(self):
         """Init the 3D graphic"""
@@ -278,7 +269,7 @@ class Robot(QtOpenGL.QGLWidget):
 
         # Render each object...
         for object in self.objects:
-            object.render_scene()
+            self.objects[object].render_scene()
 
         # Add ambient light...
         glLightModelfv(GL_LIGHT_MODEL_AMBIENT,[1, 1, 1, 0.1])
@@ -288,27 +279,14 @@ class Robot(QtOpenGL.QGLWidget):
 
     def initGeometry(self):
         """Init the geometry"""
-        # Define all files...
-        files = ["brick", 
-                    "distance_sensor_connector", 
-                    "distance_sensor", 
-                    "motor_right", 
-                    "motor_left", 
-                    "wheel_right", 
-                    "wheel_left", 
-                    "wheel_back", 
-                    "wheel_back_connector", 
-                    "motors_connector_top", 
-                    "motors_connector_bottem", 
-                    "touch_sensor_connector", 
-                    "touch_sensor"]
 
         # Load each file in another thread...
-        for file in files:
-            objFile = ObjLoader("remote/textures/%s.obj" % file, self.updateEvent)
-            objFile.setName(file+".obj Thread")
+        for object in self.objects:
+            objFile = ObjLoader("remote/textures/%s" % self.objects[object], self.updateEvent)
+            objFile.setName(self.objects[object]+" Thread")
             objFile.start()
-            self.objects.append(objFile)
+            self.objects[object] = objFile
+            
 
     def spin(self, degrees=None):
         """Spin the 3D object"""

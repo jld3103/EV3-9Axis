@@ -129,12 +129,25 @@ class EV3:
         """"Send the value of the touch sensor"""
         value = "".join(args)
         info(str(args))
-        try:
-            value = self.touchSensor.value()
-            self.bluetooth.send(Message(channel="touchSensor",  value=value))
-        except:
-            self.bluetooth.send(Message(channel="touchSensor",  value="Device not connected"))
-        
+        update = False
+        if value == "update":
+            update = True
+        lastValue = None
+        global alive
+        while alive:
+            try:
+                value = self.touchSensor.value()
+                if value != lastValue:
+                    self.bluetooth.send(Message(channel="touchSensor",  value=value))
+                    lastValue = value
+            except:
+                self.bluetooth.send(Message(channel="touchSensor",  value="Device not connected"))
+                break        
+            if not update:
+                break
+            
+            time.sleep()
+                    
     def sendAccelData(self, value):
         """"Send the values of the accelometer"""
         value = "".join(args)
