@@ -5,7 +5,6 @@ from PyQt4 import QtGui, QtCore
 from constants import *
 from logger import *
 
-setLogLevel(logLevel)
 
 
 class Square():
@@ -128,7 +127,6 @@ class Grid():
         self.parent = parent
 
         # Settings...
-        self.showUndefinedSquares = True
         self.showSets = True
         self.zoom = 0.8
         self.center = True
@@ -339,7 +337,7 @@ class Grid():
         for line in self.grid:
             x = 0
             for square in line:
-                if square.state == None and self.showUndefinedSquares:
+                if square.state == None and self.parent.settings.get("showUndefinedSquares"):
                     square.draw(painter, (100, 100, 100))
                 if square in self.openSet and self.showSets:
                     square.draw(painter, (0, 255, 0))
@@ -386,13 +384,14 @@ class Grid():
 class RoomWidget(QtGui.QWidget):
     """This class displays the room with all barriers and etc."""
 
-    def __init__(self, parent, bluetooth):
+    def __init__(self, parent, settings, bluetooth):
         super(RoomWidget,  self).__init__(parent=parent)
 
         # Create image...
         self.image = QtGui.QImage(QtCore.QSize(self.width(), self.height()), QtGui.QImage.Format_RGB32)
 
         self.parent = parent
+        self.settings = settings
         self.bluetooth = bluetooth
 
         # Create grid...
@@ -525,6 +524,12 @@ class RoomWidget(QtGui.QWidget):
         """Called when the window is resized"""
         self.resizeImage(self.image, event.size())
         super(RoomWidget, self).resizeEvent(event)
+        
+    def updateImage(self):
+        """Update the image"""
+        
+        # Draw the image...
+        self.grid.draw(self.image)
 
     def resizeImage(self, image, newSize):
         """Resize the image and draw it again"""

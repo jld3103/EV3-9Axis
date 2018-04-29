@@ -1,7 +1,7 @@
 # This is the main file for the Gui
 # Author: Finn G., Jan-Luca D.
 
-version = "1.1"
+version = "1.2"
 
 from PyQt4 import QtCore, QtGui
 
@@ -12,6 +12,7 @@ import remote.roomWidget as roomWidget
 from constants import *
 from logger import *
 from message import Message
+from settings import Settings
 
 setLogLevel(logLevel)
 
@@ -100,6 +101,9 @@ class MainWindow(QtGui.QMainWindow):
         palette = self.palette()
         palette.setColor(self.backgroundRole(), QtCore.Qt.white)
         self.setPalette(palette)
+        
+        # Read setting...
+        self.settings = Settings()
 
         # Create statusbar...
         self.menubarHeight = 26
@@ -116,11 +120,22 @@ class MainWindow(QtGui.QMainWindow):
         mainMenu = self.menuBar()
         mainMenu.setGeometry(
             QtCore.QRect(0, 0, self.size().width(), self.menubarHeight))
+            
+        # Create main menu bluetooth...
         bluetoothMenu = mainMenu.addMenu('&Bluetooth')
         self.connectionAction = QtGui.QAction("&Connect", self)
         self.connectionAction.setStatusTip('Connect to EV3')
         self.connectionAction.triggered.connect(self.onConnection)
         bluetoothMenu.addAction(self.connectionAction)
+        
+        # Create main menu room...
+        roomMenu = mainMenu.addMenu('&Room')
+        text = "&Show undefined squares"
+        if self.settings.get("showUndefinedSquares"):
+            text = "&Hide undefined squares"
+        self.showUndefinedSquaresAction = QtGui.QAction(text, self)
+        self.showUndefinedSquaresAction.triggered.connect(self.onShowUndefinedSquares)
+        roomMenu.addAction(self.showUndefinedSquaresAction)        
 
         # Connect the bluetoothEvent signal...
         self.bluetoothEvent.connect(self.onBluetoothEvent)
@@ -131,17 +146,20 @@ class MainWindow(QtGui.QMainWindow):
         self.bluetooth.start()
 
         # Insert the widgets...
-        self.room_widget = roomWidget.RoomWidget(self, self.bluetooth)
+        self.room_widget = roomWidget.RoomWidget(self, self.settings, self.bluetooth)
         self.robot_widget = robotWidget.Robot(self, self.bluetooth)
         self.commandLine = commandLineWidget.CommandLine(self, self.bluetooth)
         
         # Setup the command line...
         self.commandLine.setGeometry(self.getTextEditRect())
         
-        # Add listener...
+        # Add bluetooth listener...
         self.bluetooth.addListener("connection", self.handleConnection)
         self.bluetooth.addListener("close", self.bluetoothServerClosed)
         self.bluetooth.addListener("selectDevice", self.handleSelectDevice)
+        
+        # Show the window in maximized size...
+        self.showMaximized()
 
     def getPartingLine(self):
         """Calculate the coordinates of the parting line"""
@@ -175,6 +193,15 @@ class MainWindow(QtGui.QMainWindow):
         ) * 0.3
         rect = QtCore.QRect(x, y, x2, y2)
         return rect
+        
+    def onShowUndefinedSquares(self):
+        if self.settings.get("showUndefinedSquares"):
+            self.settings.set("showUndefinedSquares", False)
+            self.showUndefinedSquaresAction.setText("Show undefined squares")
+        else:
+            self.settings.set("showUndefinedSquares", True)
+            self.showUndefinedSquaresAction.setText("Hide undefined squares")
+        self.room_widget.updateImage()
 
     def onConnection(self):
         """Handle the connect action in the menubar"""
@@ -253,7 +280,11 @@ class MainWindow(QtGui.QMainWindow):
     def closeEvent(self, event):
         """When the window close, close the server, too"""
         
+        # Save the current grid...
         self.room_widget.closeEvent(event)
+        
+        # Save the settings...
+        self.settings.save()
 
         if self.bluetooth.connected:
             question = QtGui.QMessageBox.question(None, "Connection", "Close server?", "Yes", "No")
