@@ -109,3 +109,5 @@ __init__\.py
 \.mac\.txt
 
 remote/textures/grid\.txt
+
+*.swp
