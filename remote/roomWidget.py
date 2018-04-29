@@ -539,4 +539,3 @@ class RoomWidget(QtGui.QWidget):
 
     def closeEvent(self, event):
         self.grid.save(gridFile)
-

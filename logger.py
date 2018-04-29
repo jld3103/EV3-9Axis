@@ -16,7 +16,7 @@ def setLogLevel(level):
     """Configure the logger for the specific use case"""
     global _level
     _level = level
-    logging.basicConfig(format='%(levelname)s: %(message)s', level=level)
+    logging.basicConfig(format = '%(levelname)s: %(message)s', level = level)
 
 def getLogLevel():
     """Return the current log level"""
