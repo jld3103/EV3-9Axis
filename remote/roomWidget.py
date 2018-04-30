@@ -152,11 +152,11 @@ class Grid():
         self.startPos = QtCore.QPoint(0, 0)
 
 
-    def findOnesWay(self, start, end):
+    def findOnesWay(self, end):
         """Execute the A*"""
 
         # Store the data
-        self.start = start
+        self.start = self.current
         self.end = end
         self.openSet = []
         self.closedSet = []
@@ -223,14 +223,15 @@ class Grid():
             else:
                 self.finding = False
                 # Draw the path
-                for i in range(len(self.path)):
-                    self.path[i].inPath = True
                 self.draw(self.parent.image)
                 info("No solution!")
+                QtGui.QMessageBox.warning(None, "A*", "No solution!", "Ok")
                 return
         
+        # There is a solution...
         self.end.inPath = True
         self.end.modified = True
+        self.current = self.end
 
     def heuristic(self, a, b):
         """Calculate the distance"""
@@ -438,9 +439,6 @@ class RoomWidget(QtGui.QWidget):
         # Load the old grid
         self.grid.load(gridFile)
 
-        # Run the A*
-       # self.grid.findOnesWay(self.grid.getSquare(5, 5), self.grid.getSquare(10, 10))
-
     def contextMenu(self, pos):
         """show the context menu"""
         # Create the menu...
@@ -467,7 +465,7 @@ class RoomWidget(QtGui.QWidget):
         
     def onEndPos(self):
         clickedSquare = self.grid.getSquareAtCoordinate(self.mousePos.x(), self.mousePos.y())
-        self.grid.findOnesWay(self.grid.current, self.grid.getSquare(clickedSquare.x(), clickedSquare.y()))
+        self.grid.findOnesWay(self.grid.getSquare(clickedSquare.x(), clickedSquare.y()))
         
         # Draw the grid...
         self.grid.modified = True
