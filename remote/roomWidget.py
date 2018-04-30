@@ -20,11 +20,20 @@ class Square():
         self.state = state # None is not discovered, True is a wall, False is floor
         self.inPath = False
         self.previous = None
-        self.neighbours = []
 
         self.f = 0
         self.g = 0
         self.h = 0
+        
+    def resetAlgorithmData(self):
+        """Reset all the data for the algorithm"""
+        self.inPath = False
+        self.previous = None
+        self.f = 0
+        self.g = 0
+        self.h = 0
+        
+        self.modified = True
         
     def getNeighbours(self):
         x = self.x()
@@ -155,6 +164,10 @@ class Grid():
         self.finding = True
 
         self.openSet.append(self.start)
+        
+        for line in self.grid:
+            for square in line:
+                square.resetAlgorithmData()
 
         while self.finding: #TODO: Go the shortest way with the fewest corners (Turning the robot need much time and can be incorrect)
             # Check if way possible
@@ -214,6 +227,10 @@ class Grid():
                     self.path[i].inPath = True
                 self.draw(self.parent.image)
                 info("No solution!")
+                return
+        
+        self.end.inPath = True
+        self.end.modified = True
 
     def heuristic(self, a, b):
         """Calculate the distance"""
@@ -422,7 +439,7 @@ class RoomWidget(QtGui.QWidget):
         self.grid.load(gridFile)
 
         # Run the A*
-        self.grid.findOnesWay(self.grid.getSquare(5, 5), self.grid.getSquare(10, 10))
+       # self.grid.findOnesWay(self.grid.getSquare(5, 5), self.grid.getSquare(10, 10))
 
     def contextMenu(self, pos):
         """show the context menu"""
@@ -430,12 +447,31 @@ class RoomWidget(QtGui.QWidget):
         self.menu = QtGui.QMenu(self)
 
         # Add the actions...
+        self.menu.addAction("Set start position", self.onStartPos)
+        self.menu.addAction("Set end position", self.onEndPos)
         self.menu.addAction("Center", self.onCenter)
         self.menu.addAction("Reset zoom", self.onResetZoom)
         self.menu.addAction("Reset grid", self.onResetGrid)
 
         # Show the menu on the click position...
         self.menu.exec_(self.mapToGlobal(pos))
+        
+    def onStartPos(self):
+        """Set the start position"""
+        clickedSquare = self.grid.getSquareAtCoordinate(self.mousePos.x(), self.mousePos.y())
+        self.grid.current = self.grid.getSquare(clickedSquare.x(), clickedSquare.y())
+        self.grid.current.updateState(False)
+        
+        # Draw the square...
+        self.grid.draw(self.image)
+        
+    def onEndPos(self):
+        clickedSquare = self.grid.getSquareAtCoordinate(self.mousePos.x(), self.mousePos.y())
+        self.grid.findOnesWay(self.grid.current, self.grid.getSquare(clickedSquare.x(), clickedSquare.y()))
+        
+        # Draw the grid...
+        self.grid.modified = True
+        self.grid.draw(self.image)
 
     def onResetGrid(self):
         """Reset the grid"""
@@ -496,13 +532,13 @@ class RoomWidget(QtGui.QWidget):
 
         # Update moved...
         self.moved = 0
+        
+        # Update the last click position...
+        self.mousePos = event.pos()
 
+        # If it's a right click, open the context menu...
         if event.button() == QtCore.Qt.RightButton:
-            # If it's a right click, open the context menu...
             self.contextMenu(event.pos())
-        else:
-            # Update the last click position...
-            self.mousePos = event.pos()
 
     def mouseMoveEvent(self, event):
         """Get difference to the last mouse event"""
