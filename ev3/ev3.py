@@ -57,8 +57,7 @@ class EV3:
         # Notice the old value...
         oldValue = None
         
-        global alive
-        while alive:
+        while self.bluetooth.connected:
             # Get the value...
             channel, value = function(value)
             

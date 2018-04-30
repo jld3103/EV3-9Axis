@@ -3,12 +3,17 @@
 
 version = "1.2"
 
+# Import the GUI library PyQt4...
 from PyQt4 import QtCore, QtGui
 
-import remote.commandLineWidget as commandLineWidget
+# Import all widgets and windows...
 import remote.remoteCommunication as communication
+import remote.commandLineWidget as commandLineWidget
 import remote.robotWidget as robotWidget
 import remote.roomWidget as roomWidget
+import remote.selectDeveiceDialog as selectDeveiceDialog
+
+# Import all tool...
 from constants import *
 from logger import *
 from message import Message
@@ -16,71 +21,6 @@ from settings import Settings
 
 setLogLevel(logLevel)
 
-class SelectDeviceDialog(QtGui.QDialog):
-    """Show dialog for selecting a bluetooth device"""
-    
-    selectedDevice = None
-    
-    def __init__(self, parent, devices):
-        QtGui.QDialog.__init__(self, parent)
-        
-        self.setWindowTitle("Select Device")
-        self.setMinimumSize(QtCore.QSize(390, 160))
-        self.setMaximumSize(QtCore.QSize(390, 160))
-        
-        self.parent = parent
-        
-        # Set background color...
-        p = self.palette()
-        p.setColor(self.backgroundRole(), QtGui.QColor(255, 255, 255))
-        self.setPalette(p)
-        
-        # Get list of devices...
-        self.devices = devices.split("|")
-        
-        # Create Combo box...
-        self.comboBox = QtGui.QComboBox(self)
-        self.comboBox.setGeometry(10, 20, 360, 22)
-        self.comboBox.addItems(self.devices)
-        self.comboBox.show()
-        
-        # Add OK button...
-        self.btn_ok = QtGui.QPushButton(self)
-        self.btn_ok.setGeometry(180, 80, 93, 28)
-        self.btn_ok.setText("OK")
-        self.btn_ok.show()
-        
-        # Add Close button...
-        self.btn_close = QtGui.QPushButton(self)
-        self.btn_close.setGeometry(280, 80, 93, 28)
-        self.btn_close.setText("Close")
-        self.btn_close.show()
-        
-        # Connect buttons...
-        self.connect(self.btn_ok, QtCore.SIGNAL("clicked()"),  self.onOk)
-        self.connect(self.btn_close, QtCore.SIGNAL("clicked()"),  self.onClose)
-                
-    def onOk(self):
-        """Save the selected device"""
-        
-        # Get selected device...
-        device = self.comboBox.currentText()
-        info("Selected %s" % device)
-        
-        # Get mac address...
-        mac = device.split("-")[1].strip()
-        
-        # Start the Thread for the bluetooth connection with the selected device...
-        self.parent.bluetooth = communication.BluetoothThread(self.parent.bluetoothEvent, macAddress=mac, channels=self.parent.bluetooth.channels, updatingChannels=self.parent.bluetooth.updatingChannels)
-        self.parent.bluetooth.setName("BluetoothThread")
-        self.parent.bluetooth.start()
-        
-        # Close dialog...
-        self.close()
-
-    def onClose(self):
-        """Close the dialog"""
-        self.close()
 
 class MainWindow(QtGui.QMainWindow):
     """Controls the window"""
@@ -179,7 +119,7 @@ class MainWindow(QtGui.QMainWindow):
         xPositionRobot = self.size().width() * 0.7 + 1
         rect = QtCore.QRect(xPositionRobot, self.menubarHeight,
                             self.size().width() * 0.3,
-                            self.size().width() * 0.3)
+                            self.size().width() * 0.2)
         return rect
 
     def getRoomImgRect(self):
@@ -193,10 +133,9 @@ class MainWindow(QtGui.QMainWindow):
     def getTextEditRect(self):
         """Calculate the rect of the MessageTextEdit img"""
         x = self.size().width() * 0.7 + 1
-        y = self.size().width() * 0.3 + self.menubarHeight
+        y = self.size().width() * 0.2 + self.menubarHeight + 2
         x2 = self.size().width() - self.size().width() * 0.7
-        y2 = self.size().height() - self.menubarHeight * 2 - self.size().width(
-        ) * 0.3
+        y2 = self.size().height() - self.menubarHeight * 2 - self.size().width() * 0.2 -2
         rect = QtCore.QRect(x, y, x2, y2)
         return rect
         
@@ -225,7 +164,7 @@ class MainWindow(QtGui.QMainWindow):
         if not self.bluetooth.connected and not self.bluetooth.isAlive():
             # Start the Thread for the bluetooth connection...
             info("Send connect signal")
-            self.bluetooth = communication.BluetoothThread(self.bluetoothEvent, self.bluetooth.channels, self.bluetooth.updatingChannels)
+            self.bluetooth = communication.BluetoothThread(self.bluetoothEvent, self.bluetooth.channels)
             self.bluetooth.setName("BluetoothThread")
             self.bluetooth.start()
 
@@ -266,7 +205,7 @@ class MainWindow(QtGui.QMainWindow):
             
     def handleSelectDevice(self, value):
         """Show a dialog for selecting a bluetooth device"""
-        dialog = SelectDeviceDialog(self, value)
+        dialog = selectDeveiceDialog.SelectDeviceDialog(self, value)
         dialog.show()
                 
     def bluetoothServerClosed(self, value):

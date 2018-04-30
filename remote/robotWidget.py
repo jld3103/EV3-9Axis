@@ -307,7 +307,7 @@ class Robot(QtOpenGL.QGLWidget):
 
         # Set point of view...
         glLoadIdentity()
-        glTranslate(0, -9, -35)
+        glTranslate(0, -8, -29)
 
         # Rotate the object...
         glRotate(self.yRotDeg, 0, -10, 00)
