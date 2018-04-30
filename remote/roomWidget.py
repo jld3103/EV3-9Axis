@@ -395,7 +395,7 @@ class Grid():
                 coordinates = values[0].split(":")
                 x = int(coordinates[0])
                 y = int(coordinates[1])
-                state = bool(values[1].strip())
+                state = values[1].strip() == "True"
 
                 self.addSquare(x, y, state)
         except:
@@ -407,7 +407,7 @@ class Grid():
         for line in self.grid:
             for square in line:
                 if square.state != None:
-                    file.write("%d:%d - %d\n" % (square.x(), square.y(), square.state))
+                    file.write("%d:%d - %s\n" % (square.x(), square.y(), square.state))
         file.close()
 
 class RoomWidget(QtGui.QWidget):

@@ -19,11 +19,13 @@ size = MSGLEN
 class BluetoothThread(threading.Thread):
     """Control the bluetooth connection"""
 
-    def __init__(self, channels = {}):
+    def __init__(self, receivedData, channels = {}):
         threading.Thread.__init__(self)
 
         self.connected = False
         self.isRunning = True
+        
+        self.receivedData = receivedData
 
         # Define all channels...
         self.channels = channels
@@ -156,8 +158,7 @@ class BluetoothThread(threading.Thread):
 
             # Check if the channel is in channels...
             if channel in self.channels:
-                for function in self.channels[channel]:
-                    listener = threading.Thread(target = function, args = (value))
-                    listener.start()
+                listener = threading.Thread(target = self.receivedData, args = (function, value))
+                listener.start()
 
         info("Stop listening")

@@ -15,7 +15,7 @@ setLogLevel(logLevel)
 class BluetoothThread(threading.Thread):
     """Control the bluetooth connection"""
 
-    def __init__(self, bluetoothEvent, macAddress = None, channels = {}):
+    def __init__(self, bluetoothEvent, macAddress = None, channels = {}, updatingChannels = []):
         threading.Thread.__init__(self)
 
         self.bluetoothEvent = bluetoothEvent
@@ -24,6 +24,7 @@ class BluetoothThread(threading.Thread):
 
         # Define all channels...
         self.channels = channels
+        self.updatingChannels = updatingChannels
 
         self.macAddress = macAddress
 
@@ -34,6 +35,11 @@ class BluetoothThread(threading.Thread):
         info("Connecting to EV3")
         try:
             self.connectByLastConnection()
+            
+            # Get updates from the ev3 in all channels...
+            for channel in self.channels:
+                if not channel in updatingChannels:
+                    self.send(Message(channel = channel,  value = "update"))
         except Exception as e:
             error("Failed to connect: %s" % e)
             self.bluetoothEvent.emit(Message(channel = "connection", value = "Failed to connect"))
@@ -47,6 +53,8 @@ class BluetoothThread(threading.Thread):
 
         if not channel in self.channels:
             self.channels[channel] = [callback]
+            if self.connected and not channel in self.updatingChannels:
+                self.send(Message(channel = channel,  value = "update"))
         else:
             self.channels[channel].append(callback)
 

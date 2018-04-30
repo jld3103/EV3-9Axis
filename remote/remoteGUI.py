@@ -71,7 +71,7 @@ class SelectDeviceDialog(QtGui.QDialog):
         mac = device.split("-")[1].strip()
         
         # Start the Thread for the bluetooth connection with the selected device...
-        self.parent.bluetooth = communication.BluetoothThread(self.parent.bluetoothEvent, macAddress=mac, channels=self.parent.bluetooth.channels)
+        self.parent.bluetooth = communication.BluetoothThread(self.parent.bluetoothEvent, macAddress=mac, channels=self.parent.bluetooth.channels, updatingChannels=self.parent.bluetooth.updatingChannels)
         self.parent.bluetooth.setName("BluetoothThread")
         self.parent.bluetooth.start()
         
@@ -225,7 +225,7 @@ class MainWindow(QtGui.QMainWindow):
         if not self.bluetooth.connected and not self.bluetooth.isAlive():
             # Start the Thread for the bluetooth connection...
             info("Send connect signal")
-            self.bluetooth = communication.BluetoothThread(self.bluetoothEvent, self.bluetooth.channels)
+            self.bluetooth = communication.BluetoothThread(self.bluetoothEvent, self.bluetooth.channels, self.bluetooth.updatingChannels)
             self.bluetooth.setName("BluetoothThread")
             self.bluetooth.start()
 
