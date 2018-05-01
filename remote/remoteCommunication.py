@@ -180,7 +180,7 @@ class BluetoothThread(threading.Thread):
         if self.parent.settings.get("showSendedMsg"):
             self.parent.commandLine.newMessage(message, sended = True)
 
-        text = str(message)
+        text = str(message) + ";"
         debug("Send '%s' to bluetooth device" % text)
         global s
         try:
