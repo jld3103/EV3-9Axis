@@ -221,13 +221,9 @@ class Grid():
         self.parent.bluetooth.send(Message("current", str(self.current.x()) + ":" + str(self.current.y())))
 
         # Send the commands for the path to the ev3...
-        bluetoothCommands = self.getCommandsForPath(self.path)
+        self.parent.bluetooth.send(self.getPathCommand(self.path))
 
-        for command in bluetoothCommands:
-            self.parent.bluetooth.send(command)
-            info(str(command))
-
-    def getCommandsForPath(self, path):
+    def getPathCommand(self, path):
         """Put all commands for the ev3 in a list"""
         # There is a solution...
         commands = []
@@ -274,8 +270,15 @@ class Grid():
             else:
                 commands.append(Message("turn", nextOrientation))
                 currentOrientation = nextOrientation
+                
+        value = ""
+        
+        for command in commands:
+            value += str(command) + "|"
+            
+        command = Message(channel = "path", value = value[:-1])
 
-        return commands
+        return command
 
     def heuristic(self, a, b):
         """Calculate the distance"""

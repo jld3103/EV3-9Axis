@@ -67,6 +67,8 @@ class EV3:
         self.bluetooth.addListener("calibrateForward", self.calibrateForward)
         self.bluetooth.addListener("calibrateLeft", self.calibrateLeft)
         self.bluetooth.addListener("calibrateRight", self.calibrateRight)
+        self.bluetooth.addListener("path", self.path)
+        self.bluetooth.addListener("current", self.setCurrent)
 
         threading.Thread(target = self.listenPath).start()
 
@@ -104,49 +106,57 @@ class EV3:
         return ("calibrateRight", "Success")
 
     def _1Forward(self):
-        print("1 forward")
+        info("1 forward")
 
     def _90Left(self):
-        print("90 left")
+        info("90 left")
 
     def _90Right(self):
-        print("90 right")
+        info("90 right")
+        
+    def setCurrent(self, *args):
+        """Set the current square"""
+        self.current = "".join(args)
 
-    def listenPath(self):
-        while True:
-            try:
-                data = self.bluetooth.pathQueue.get(timeout = 1).split(": ")
-                channel = data[0]
-                value = data[1]
-                if channel == "current":
-                    self.current = value
-                elif channel == "forward":
-                    for i in range(int(value)):
-                        self._1Forward()
-                        x = int(self.current.split(":")[0])
-                        y = int(self.current.split(":")[1])
-                        o = self.orientation
-                        if o == 0:
-                            y -= 1
-                        elif o == 1:
-                            x += 1
-                        elif o == 2:
-                            y += 1
-                        elif o == 3:
-                            x -= 1
-                        self.current = str(x) + ":" + str(y)
-                elif channel == "turn":
-                    value = int(value)
-                    if self.orientation < value:
-                        for i in range(value - self.orientation):
-                            self._90Right()
-                    else:
-                        for i in range(self.orientation - value):
-                            self._90Left()
-                    self.orientation = value
-            except:
-                if not self.bluetooth.isRunning:
-                    break
+    def path(self, *args):
+        """Listen to the path commands"""
+        value = "".join(args)
+        
+        commands = value.split("|")
+        
+        # Listen until the server close...
+        for command in commands:
+            channel = command.split(": ")[0]
+            value = command.split(": ")[1]
+
+            # If the channel is 'forward', drive the number of squares forward...
+            if channel == "forward":
+                for i in range(int(value)):
+                    self._1Forward()
+                    x = int(self.current.split(":")[0])
+                    y = int(self.current.split(":")[1])
+                    o = self.orientation
+                    if o == 0:
+                        y -= 1
+                    elif o == 1:
+                        x += 1
+                    elif o == 2:
+                        y += 1
+                    elif o == 3:
+                        x -= 1
+                    self.current = str(x) + ":" + str(y)
+            # If the channel is 'turn', turn the robot to position...
+            elif channel == "turn":
+                value = int(value)
+                if self.orientation < value:
+                    for i in range(value - self.orientation):
+                        self._90Right()
+                else:
+                    for i in range(self.orientation - value):
+                        self._90Left()
+                self.orientation = value
+                
+        return ("path", "Success")
 
     def receivedData(self, function, value):
         """Execute the listener for the channel"""
