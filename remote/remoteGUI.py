@@ -70,12 +70,12 @@ class MainWindow(QtGui.QMainWindow):
 
         # Create main menu room...
         roomMenu = mainMenu.addMenu('&Room')
-        text = "&Show undefined squares"
-        if self.settings.get("showUndefinedSquares"):
-            text = "&Hide undefined squares"
-        self.showUndefinedSquaresAction = QtGui.QAction(text, self)
-        self.showUndefinedSquaresAction.triggered.connect(self.onShowUndefinedSquares)
-        roomMenu.addAction(self.showUndefinedSquaresAction)
+        text = "&Show floor squares"
+        if self.settings.get("showFloorSquare"):
+            text = "&Hide floor squares"
+        self.showFloorSquareAction = QtGui.QAction(text, self)
+        self.showFloorSquareAction.triggered.connect(self.onShowFloorSquare)
+        roomMenu.addAction(self.showFloorSquareAction)
         text = "&Show sets"
         if self.settings.get("showSets"):
             text = "&Hide sets"
@@ -176,13 +176,13 @@ class MainWindow(QtGui.QMainWindow):
         self.room_widget.updateImage()
 
 
-    def onShowUndefinedSquares(self):
-        if self.settings.get("showUndefinedSquares"):
-            self.settings.set("showUndefinedSquares", False)
-            self.showUndefinedSquaresAction.setText("Show undefined squares")
+    def onShowFloorSquare(self):
+        if self.settings.get("showFloorSquare"):
+            self.settings.set("showFloorSquare", False)
+            self.showFloorSquareAction.setText("Show floor squares")
         else:
-            self.settings.set("showUndefinedSquares", True)
-            self.showUndefinedSquaresAction.setText("Hide undefined squares")
+            self.settings.set("showFloorSquare", True)
+            self.showFloorSquareAction.setText("Hide floor squares")
         self.room_widget.updateImage()
 
     def onConnection(self):

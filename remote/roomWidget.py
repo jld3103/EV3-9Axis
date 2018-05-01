@@ -117,7 +117,7 @@ class Square():
 class Grid():
     """This class manage the squares"""
     def __init__(self, parent):
-        # Define the grid with only one undefined square...
+        # Define the grid with only one floor square...
         self.grid = [[Square(self)]]
 
         # Store the location of the EV3...
@@ -416,7 +416,7 @@ class Grid():
                     square.draw(painter, (255, 0, 0))
                 elif square.state == False:
                     square.draw(painter, (0, 0, 0))
-                elif square.state == None and self.parent.settings.get("showUndefinedSquares"):
+                elif square.state == None and self.parent.settings.get("showFloorSquare"):
                     square.draw(painter, (100, 100, 100))
 
 
