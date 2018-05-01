@@ -22,6 +22,19 @@ class EV3:
         self.orientation = 0 # Top: 0 / Right: 1 / Bottom: 2 / Left: 3
         self.current = "0:0"
 
+        # Calibration data
+        self.cFT = 0
+        self.cFL = 0
+        self.cFR = 0
+
+        self.cLT = 0
+        self.cLL = 0
+        self.cLR = 0
+
+        self.cRT = 0
+        self.cRL = 0
+        self.cRR = 0
+
         # Init all sensors...
         self.touchSensor = ev3.TouchSensor()
         self.infraredSensor = ev3.InfraredSensor()
@@ -51,8 +64,50 @@ class EV3:
         self.bluetooth.addListener("gyro", self.sendGyroData)
         self.bluetooth.addListener("mag", self.sendMagData)
         self.bluetooth.addListener("close", self.close)
+        self.bluetooth.addListener("calibrateForward", self.calibrateForward)
+        self.bluetooth.addListener("calibrateLeft", self.calibrateLeft)
+        self.bluetooth.addListener("calibrateRight", self.calibrateRight)
 
         threading.Thread(target = self.listenPath).start()
+
+    def calibrateForward(self, data):
+        if data == "test":
+            info("Testing forward...")
+            self._1Forward()
+        else:
+            data = data.split(":")
+            self.cFT = data[0]
+            self.cFL = data[0]
+            self.cFR = data[0]
+
+    def calibrateLeft(self, data):
+        if data == "test":
+            info("Testing left...")
+            self._90Left()
+        else:
+            data = data.split(":")
+            self.cLT = data[0]
+            self.cLL = data[0]
+            self.cLR = data[0]
+
+    def calibrateRight(self, data):
+        if data == "test":
+            info("Testing right...")
+            self._90Right()
+        else:
+            data = data.split(":")
+            self.cRT = data[0]
+            self.cRL = data[0]
+            self.cRR = data[0]
+
+    def _1Forward(self):
+        print("1 forward")
+
+    def _90Left(self):
+        print("90 left")
+
+    def _90Right(self):
+        print("90 right")
 
     def listenPath(self):
         while True:
@@ -64,6 +119,7 @@ class EV3:
                     self.current = value
                 elif channel == "forward":
                     for i in range(int(value)):
+                        self._1Forward()
                         x = int(self.current.split(":")[0])
                         y = int(self.current.split(":")[1])
                         o = self.orientation
@@ -77,7 +133,14 @@ class EV3:
                             x -= 1
                         self.current = str(x) + ":" + str(y)
                 elif channel == "turn":
-                    self.orientation = int(value)
+                    value = int(value)
+                    if self.orientation < value:
+                        for i in range(value - self.orientation):
+                            self._90Right()
+                    else:
+                        for i in range(self.orientation - value):
+                            self._90Left()
+                    self.orientation = value
             except:
                 if not self.bluetooth.isRunning:
                     break
