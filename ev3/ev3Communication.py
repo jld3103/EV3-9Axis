@@ -128,7 +128,6 @@ class BluetoothThread(threading.Thread):
         info("Listening...")
 
         while self.connected:
-            info("Wait for msg...")
             try:
                 # Wait for data...
                 data = client.recv(size)
@@ -148,7 +147,6 @@ class BluetoothThread(threading.Thread):
                 info("Stop listening")
                 return
 
-            debug("Received: %s" % (data))
             msg = str(data).split(";")
             for i in range(len(msg)):
                 if msg[i] != "'":

@@ -46,7 +46,11 @@ class BluetoothThread(threading.Thread):
         """Add a listener for a channel"""
 
         debug("Add new listener for the channel '%s': %s" % (channel, callback))
+        while not self.connected:
+            pass
+        threading.Thread(target=self._addListener(channel, callback)).start()
 
+    def _addListener(self, channel, callback):
         if not channel in self.channels:
             self.channels[channel] = [callback]
             if self.connected:
@@ -204,7 +208,6 @@ class BluetoothThread(threading.Thread):
         info("Listening...")
 
         while self.connected:
-            info("Waiting for msg...")
             try:
                 data = s.recv(MSGLEN)
             except OSError:
@@ -221,7 +224,7 @@ class BluetoothThread(threading.Thread):
                 info("Stop listening")
                 return
 
-            info("Received: %s" % (data))
+            debug("Received: %s" % (data))
             data = str(data).split("'")[1]
             fragments = str(data).split(": ")
 
