@@ -236,15 +236,6 @@ class MainWindow(QtGui.QMainWindow):
         dialog = selectDeveiceDialog.SelectDeviceDialog(self, value)
         dialog.show()
 
-    def bluetoothServerClosed(self, value):
-        """Inform the user about the closed server"""
-        self.bluetoothConnected.setText("Disonnected")
-        QtGui.QMessageBox.information(
-            None, "Bluetooth", "Server closed...", QtGui.QMessageBox.Ok)
-
-        # Update connection...
-        self.handleConnection("Disconnected")
-
     def paintEvent(self, event):
         """Paint the window."""
 
