@@ -35,7 +35,7 @@ class BluetoothThread(threading.Thread):
         info("Connecting to EV3")
         try:
             self.connectByLastConnection()
-            
+
         except Exception as e:
             error("Failed to connect: %s" % e)
             self.bluetoothEvent.emit(Message(channel = "connection", value = "Failed to connect"))
@@ -150,7 +150,7 @@ class BluetoothThread(threading.Thread):
         listenThread = threading.Thread(target = self.listen)
         listenThread.setName("ListenThread")
         listenThread.start()
-        
+
         # Get all updates  from the channels...
         for channel in self.channels:
             self.send(Message(channel = channel,  value = "update"))
@@ -175,11 +175,11 @@ class BluetoothThread(threading.Thread):
 
     def send(self, message):
         """Send data to bluetooth device"""
-        
+
         # Inform the command line (For debugging)...
         if self.parent.settings.get("showSendedMsg"):
             self.parent.commandLine.newMessage(message, sended = True)
-        
+
         text = str(message)
         debug("Send '%s' to bluetooth device" % text)
         global s

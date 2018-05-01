@@ -64,7 +64,7 @@ class ObjLoader(threading.Thread):
 
                 # Check if the line define a face...
                 elif line[0] == "f":
-                    # Replace all "//" with "/", because both syntxes are correct... 
+                    # Replace all "//" with "/", because both syntxes are correct...
                     string = line.replace("//","/").strip()
 
                     # Split the line in 'f' and the values (Point 1, Point 2, ...)...
@@ -206,7 +206,7 @@ class Robot(QtOpenGL.QGLWidget):
                                 "motorsConnectorTop" : "motors_connector_top.obj",
                                 "motorsConnectorBottem" : "motors_connector_bottem.obj",
                                 "touchSensorConnector" : "touch_sensor_connector.obj",
-                                "touchSensorHead" : "touch_sensor_head.obj", 
+                                "touchSensorHead" : "touch_sensor_head.obj",
                                 "touchSensor" : "touch_sensor.obj",
                                 "colorSensor" : "color_sensor.obj"}
 
@@ -228,7 +228,7 @@ class Robot(QtOpenGL.QGLWidget):
         # If the color sensor is not pressed, set the color to default...
         else:
             self.objects["touchSensorHead"].setColor()
-        
+
         # Update image...
         self.paintGL()
 
@@ -245,7 +245,7 @@ class Robot(QtOpenGL.QGLWidget):
 
             # Set the color of the color sensor...
             self.objects["colorSensor"].setColor(r, g, b)
-            
+
         # Update image...
         self.paintGL()
 
@@ -269,7 +269,7 @@ class Robot(QtOpenGL.QGLWidget):
 
         # Set the color...
         self.objects["distanceSensor"].setColor(colorR, colorG, 0)
-        
+
         # Update image...
         self.paintGL()
 

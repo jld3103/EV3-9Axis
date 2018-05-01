@@ -41,7 +41,7 @@ class MainWindow(QtGui.QMainWindow):
         palette = self.palette()
         palette.setColor(self.backgroundRole(), QtCore.Qt.white)
         self.setPalette(palette)
-        
+
         # Read setting...
         self.settings = Settings()
 
@@ -60,14 +60,14 @@ class MainWindow(QtGui.QMainWindow):
         mainMenu = self.menuBar()
         mainMenu.setGeometry(
             QtCore.QRect(0, 0, self.size().width(), self.menubarHeight))
-            
+
         # Create main menu bluetooth...
         bluetoothMenu = mainMenu.addMenu('&Bluetooth')
         self.connectionAction = QtGui.QAction("&Connect", self)
         self.connectionAction.setStatusTip('Connect to EV3')
         self.connectionAction.triggered.connect(self.onConnection)
         bluetoothMenu.addAction(self.connectionAction)
-        
+
         # Create main menu room...
         roomMenu = mainMenu.addMenu('&Room')
         text = "&Show undefined squares"
@@ -75,14 +75,14 @@ class MainWindow(QtGui.QMainWindow):
             text = "&Hide undefined squares"
         self.showUndefinedSquaresAction = QtGui.QAction(text, self)
         self.showUndefinedSquaresAction.triggered.connect(self.onShowUndefinedSquares)
-        roomMenu.addAction(self.showUndefinedSquaresAction)        
+        roomMenu.addAction(self.showUndefinedSquaresAction)
         text = "&Show sets"
         if self.settings.get("showSets"):
             text = "&Hide sets"
         self.showSetsAction = QtGui.QAction(text, self)
         self.showSetsAction.triggered.connect(self.onShowSets)
         roomMenu.addAction(self.showSetsAction)
-        
+
         # Create main menu commmand line...
         cmdMenu = mainMenu.addMenu('&Command line')
         text = "&Show sended messages"
@@ -90,7 +90,7 @@ class MainWindow(QtGui.QMainWindow):
             text = "&Hide sended messages"
         self.showSendedMsgAction = QtGui.QAction(text, self)
         self.showSendedMsgAction.triggered.connect(self.onShowSendedMsg)
-        cmdMenu.addAction(self.showSendedMsgAction)        
+        cmdMenu.addAction(self.showSendedMsgAction)
         text = "&Show received messages"
         if self.settings.get("showReceivedMsg"):
             text = "&Hide received messages"
@@ -110,10 +110,10 @@ class MainWindow(QtGui.QMainWindow):
         self.room_widget = roomWidget.RoomWidget(self, self.settings, self.bluetooth)
         self.robot_widget = robotWidget.Robot(self, self.bluetooth)
         self.commandLine = commandLineWidget.CommandLine(self, self.bluetooth)
-        
+
         # Setup the command line...
         self.commandLine.setGeometry(self.getTextEditRect())
-        
+
         # Add bluetooth listener...
         self.bluetooth.addListener("connection", self.handleConnection)
         self.bluetooth.addListener("close", self.bluetoothServerClosed)
@@ -150,7 +150,7 @@ class MainWindow(QtGui.QMainWindow):
         y2 = self.size().height() - self.menubarHeight * 2 - self.size().width() * 0.2 -2
         rect = QtCore.QRect(x, y, x2, y2)
         return rect
-        
+
     def onShowReceivedMsg(self):
         if self.settings.get("showReceivedMsg"):
             self.settings.set("showReceivedMsg", False)
@@ -158,7 +158,7 @@ class MainWindow(QtGui.QMainWindow):
         else:
             self.settings.set("showReceivedMsg", True)
             self.showReceivedMsgAction.setText("Hide received messages")
-        
+
     def onShowSendedMsg(self):
         if self.settings.get("showSendedMsg"):
             self.settings.set("showSendedMsg", False)
@@ -166,7 +166,7 @@ class MainWindow(QtGui.QMainWindow):
         else:
             self.settings.set("showSendedMsg", True)
             self.showSendedMsgAction.setText("Hide sended messages")
-        
+
     def onShowSets(self):
         if self.settings.get("showSets"):
             self.settings.set("showSets", False)
@@ -176,7 +176,7 @@ class MainWindow(QtGui.QMainWindow):
             self.showSetsAction.setText("Hide sets")
         self.room_widget.updateImage()
 
-        
+
     def onShowUndefinedSquares(self):
         if self.settings.get("showUndefinedSquares"):
             self.settings.set("showUndefinedSquares", False)
@@ -203,7 +203,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def onBluetoothEvent(self, message):
         """Handle the bluetooth events"""
-        
+
         if self.settings.get("showReceivedMsg"):
             self.commandLine.newMessage(message)
 
@@ -211,19 +211,19 @@ class MainWindow(QtGui.QMainWindow):
         if message.channel in self.bluetooth.channels and not message.value == "Device not connected":
             for function in self.bluetooth.channels[message.channel]:
                 function(message.value)
-                
+
     def handleConnection(self, value):
         """Handle the bluetooth connection"""
-        
+
         # Set statusbar on value...
         self.bluetoothConnected.setText(value)
-        
+
         # Update bluetooth action in menubar...
         if self.bluetooth.connected:
             self.connectionAction.setText("Disconnect")
         else:
             self.connectionAction.setText("Connect")
-        
+
         # Show push up window...
         if value == "Connected":
             QtGui.QMessageBox.information(None, "Bluetooth", "Connected...", QtGui.QMessageBox.Ok)
@@ -231,18 +231,18 @@ class MainWindow(QtGui.QMainWindow):
             QtGui.QMessageBox.information(None, "Bluetooth", "Disconnected...", QtGui.QMessageBox.Ok)
         elif value == "Failed to connect":
             QtGui.QMessageBox.information(None, "Bluetooth", "Failed to connect!", QtGui.QMessageBox.Ok)
-            
+
     def handleSelectDevice(self, value):
         """Show a dialog for selecting a bluetooth device"""
         dialog = selectDeveiceDialog.SelectDeviceDialog(self, value)
         dialog.show()
-                
+
     def bluetoothServerClosed(self, value):
         """Inform the user about the closed server"""
         self.bluetoothConnected.setText("Disonnected")
         QtGui.QMessageBox.information(
             None, "Bluetooth", "Server closed...", QtGui.QMessageBox.Ok)
-        
+
         # Update connection...
         self.handleConnection("Disconnected")
 
@@ -263,10 +263,10 @@ class MainWindow(QtGui.QMainWindow):
 
     def closeEvent(self, event):
         """When the window close, close the server, too"""
-        
+
         # Save the current grid...
         self.room_widget.closeEvent(event)
-        
+
         # Save the settings...
         self.settings.save()
 
@@ -276,7 +276,7 @@ class MainWindow(QtGui.QMainWindow):
             # Close the server...
             if question == 0:
                 self.bluetooth.send(Message(channel="close"))
-                
+
             self.bluetooth.disconnect()
 
 

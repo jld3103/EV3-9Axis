@@ -24,7 +24,7 @@ class BluetoothThread(threading.Thread):
 
         self.connected = False
         self.isRunning = True
-        
+
         self.receivedData = receivedData
 
         # Define all channels...

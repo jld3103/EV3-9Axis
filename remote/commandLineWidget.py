@@ -50,7 +50,7 @@ class CommandLine(QtGui.QTextEdit):
             self.insertHtml("<span>>>> </span><span style='color:green;'>%s: </span><span style='color:blue;'>%s</span><br>" % (message.channel, message.value))
         else:
             self.insertHtml("<span>>>> </span><span style='color:red;'>%s: </span><span style='color:blue;'>%s</span><br>" % (message.channel, message.value))
-        
+
         # Set the cursor to the end of the first line...
         txtCursor.setPosition(len(firstLine))
         self.setTextCursor(txtCursor)
@@ -165,7 +165,7 @@ class CommandLine(QtGui.QTextEdit):
             # Set second cursor position...
             cursor.setPosition(len(firstLine), QtGui.QTextCursor.MoveAnchor)
             self.setTextCursor(cursor)
-            
+
 
         # Give Qt the signal...
         QtGui.QTextEdit.keyPressEvent(self,  event)

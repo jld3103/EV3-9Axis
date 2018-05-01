@@ -11,5 +11,3 @@ setLogLevel(logLevel)
 info("Started")
 
 ev3.EV3()
-
-

@@ -47,42 +47,42 @@ class EV3:
         self.bluetooth.addListener("gyro", self.sendGyroData)
         self.bluetooth.addListener("mag", self.sendMagData)
         self.bluetooth.addListener("close", self.close)
-        
+
     def receivedData(self, function, value):
         """Execute the listener for the channel"""
-        
+
         # Check if the mode is updating...
         updating = value.split(":")[0] == "update"
-        
+
         # Notice the old value...
         oldValue = None
-        
+
         while self.bluetooth.connected:
             # Get the value...
             channel, value = function(value)
-            
+
             # If the value is not the same like the last time, send the value to the remote...
             if value != oldValue:
                 oldValue = value
                 self.bluetooth.send(Message(channel = channel,  value = value))
-            
+
             # If the mode is not updating, send the data only once...
             if not updating:
                 break
-            
+
             # Wait for 0.1 seconds (TODO: Set interval from the remote)
             time.sleep(0.1)
 
     def close(self, *args):
         """Close the bluetooth server"""
-        
+
         # Close the bluetooth server...
         self.bluetooth.closeServer()
-        
+
         # Close all running threads...
         global alive
         alive = False
-        
+
         return ("close", "Closed server")
 
     def drawScreen(self, *args):
@@ -171,10 +171,8 @@ class EV3:
         """Send the values of the gyroscope"""
         gyro = mpu9250.readGyro()
         return ("gyro", "%f:%f:%f" % (gyro["x"], gyro["y"], gyro["z"]))
-        
+
     def sendMagData(self, *args):
         """Send the values of the magnetometer"""
         mag = mpu9250.readMagnet()
         return ("mag", "%f:%f:%f" % (mag["x"], mag["y"], mag["z"]))
-        
-        

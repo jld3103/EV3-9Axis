@@ -14,7 +14,7 @@ class Square():
 
         self._x = x
         self._y = y
-        
+
         self.state = state # None is not discovered, True is a wall, False is floor
         self.previous = None
         self.inPath = False
@@ -22,7 +22,7 @@ class Square():
         self.f = 0
         self.g = 0
         self.h = 0
-        
+
     def resetAlgorithmData(self):
         """Reset all the data for the algorithm"""
         self.inPath = False
@@ -30,8 +30,8 @@ class Square():
         self.f = 0
         self.g = 0
         self.h = 0
-        
-        
+
+
     def getNeighbours(self):
         x = self.x()
         y = self.y()
@@ -48,7 +48,7 @@ class Square():
             neighbours.append(self.grid.getSquare(x - 1, y))
         if y > 0:
             neighbours.append(self.grid.getSquare(x, y - 1))
-            
+
         return neighbours
 
     def x(self):
@@ -159,7 +159,7 @@ class Grid():
         self.finding = True
 
         self.openSet.append(self.start)
-        
+
         for line in self.grid:
             for square in line:
                 square.resetAlgorithmData()
@@ -179,10 +179,10 @@ class Grid():
                     self.finding = False
                     # Set the end position to the current position...
                     self.current = self.end
-                    
+
                 self.openSet.remove(current)
                 self.closedSet.append(current)
-                
+
                 currentNeighbours = current.getNeighbours()
 
                 for i in range(len(currentNeighbours)):
@@ -220,40 +220,40 @@ class Grid():
                 info("No solution!")
                 QtGui.QMessageBox.warning(None, "A*", "No solution!", "Ok")
                 return
-            
+
         # Send the commands for the path to the ev3...
         bluetoothCommands = self.getCommandsForPath(self.path)
-                
+
         for command in bluetoothCommands:
             self.parent.bluetooth.send(command)
             info(str(command))
-    
+
     def getCommandsForPath(self, path):
         """Put all commands for the ev3 in a list"""
         # There is a solution...
         commands = []
-        
+
         # Put the first square to the end...
         path.append(path[0])
         del path[0]
-        
+
         # Get the current orientation...
         currentOrientation = self.currentOrientation
-        
+
         i = 0
-        
+
         while i < len(path):
             # Get the current and next square...
             currentSquare = path[len(path)-i-1]
             nextSquare = path[len(path)-i-2]
             if i == len(path)-1:
                 break
-                
+
             nX = nextSquare.x()
             nY = nextSquare.y()
             cX = currentSquare.x()
             cY = currentSquare.y()
-            
+
             # Get the next orientation...
             if nX > cX:
                 nextOrientation = 1
@@ -263,7 +263,7 @@ class Grid():
                 nextOrientation = 0
             elif nY > cY:
                 nextOrientation = 2
-            
+
             # Create command...
             if nextOrientation == currentOrientation:
                 if len(commands) > 0 and commands[-1].channel == "forward":
@@ -271,14 +271,14 @@ class Grid():
                 else:
                     commands.append(Message("forward", 1))
                 i += 1
-                    
+
             else:
                 commands.append(Message("turn", nextOrientation))
                 currentOrientation = nextOrientation
-        
+
         # Set the new orientation to the current orientation...
         self.currentOrientation = currentOrientation
-                
+
         return commands
 
     def heuristic(self, a, b):
@@ -420,11 +420,11 @@ class Grid():
                     square.draw(painter, (0, 0, 0))
                 elif square.state == None and self.parent.settings.get("showUndefinedSquares"):
                     square.draw(painter, (100, 100, 100))
-                    
-                    
+
+
                 x += 1
             y += 1
-            
+
 
         # End painter and update the image...
         painter.end()
@@ -497,20 +497,20 @@ class RoomWidget(QtGui.QWidget):
 
         # Show the menu on the click position...
         self.menu.exec_(self.mapToGlobal(pos))
-        
+
     def onStartPos(self):
         """Set the start position"""
         clickedSquare = self.grid.getSquareAtCoordinate(self.mousePos.x(), self.mousePos.y())
         self.grid.current = self.grid.getSquare(clickedSquare.x(), clickedSquare.y())
         self.grid.current.updateState(False)
-        
+
         # Draw the square...
         self.grid.draw(self.image)
-        
+
     def onEndPos(self):
         clickedSquare = self.grid.getSquareAtCoordinate(self.mousePos.x(), self.mousePos.y())
         self.grid.findOnesWay(self.grid.getSquare(clickedSquare.x(), clickedSquare.y()))
-        
+
         # Draw the grid...
         self.grid.draw(self.image)
 
@@ -540,9 +540,9 @@ class RoomWidget(QtGui.QWidget):
 
     def onCenter(self):
         """Center the image"""
-        
+
         self.grid.center = True
-        
+
         # Draw the image...
         self.grid.draw(self.image)
 
@@ -568,7 +568,7 @@ class RoomWidget(QtGui.QWidget):
 
         # Update moved...
         self.moved = 0
-        
+
         # Update the last click position...
         self.mousePos = event.pos()
 
@@ -616,10 +616,10 @@ class RoomWidget(QtGui.QWidget):
         """Called when the window is resized"""
         self.resizeImage(self.image, event.size())
         super(RoomWidget, self).resizeEvent(event)
-        
+
     def updateImage(self):
         """Update the image"""
-        
+
         # Draw the image...
         self.grid.draw(self.image)
 
@@ -631,7 +631,7 @@ class RoomWidget(QtGui.QWidget):
         # Create a new image with new size and re-draw the rail network
         self.image = QtGui.QImage(newSize, QtGui.QImage.Format_RGB32)
         self.image.fill(QtGui.qRgb(150, 150, 150))
-        
+
         # Paint the image...
         self.grid.draw(self.image)
 
