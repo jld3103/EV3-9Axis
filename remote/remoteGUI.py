@@ -118,9 +118,6 @@ class MainWindow(QtGui.QMainWindow):
         self.bluetooth.addListener("connection", self.handleConnection)
         self.bluetooth.addListener("close", self.bluetoothServerClosed)
         self.bluetooth.addListener("selectDevice", self.handleSelectDevice)
-        
-        # Show the window in maximized size...
-        self.showMaximized()
 
     def getPartingLine(self):
         """Calculate the coordinates of the parting line"""
