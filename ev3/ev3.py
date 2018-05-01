@@ -79,6 +79,7 @@ class EV3:
             self.cFT = data[0]
             self.cFL = data[0]
             self.cFR = data[0]
+        return ("calibrateForward", "Success")
 
     def calibrateLeft(self, data):
         if data == "test":
@@ -89,6 +90,7 @@ class EV3:
             self.cLT = data[0]
             self.cLL = data[0]
             self.cLR = data[0]
+        return ("calibrateLeft", "Success")
 
     def calibrateRight(self, data):
         if data == "test":
@@ -99,6 +101,7 @@ class EV3:
             self.cRT = data[0]
             self.cRL = data[0]
             self.cRR = data[0]
+        return ("calibrateRight", "Success")
 
     def _1Forward(self):
         print("1 forward")
