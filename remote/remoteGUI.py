@@ -116,7 +116,6 @@ class MainWindow(QtGui.QMainWindow):
 
         # Add bluetooth listener...
         self.bluetooth.addListener("connection", self.handleConnection)
-        self.bluetooth.addListener("close", self.bluetoothServerClosed)
         self.bluetooth.addListener("selectDevice", self.handleSelectDevice)
 
     def getPartingLine(self):

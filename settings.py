@@ -30,7 +30,7 @@ class Settings():
                 self.settings[fragments[0]] = value
             file.close()
         except:
-            error("Cannot found the settings file")
+            error("Cannot find the settings file")
 
     def get(self, key):
         """Get a value in the settings"""

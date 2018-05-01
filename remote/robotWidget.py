@@ -230,7 +230,7 @@ class Robot(QtOpenGL.QGLWidget):
             self.objects["touchSensorHead"].setColor()
 
         # Update image...
-        self.paintGL()
+        self.updateGL()
 
     def setColorSensor(self, value):
         """Set the color of the color sensor"""
@@ -247,7 +247,7 @@ class Robot(QtOpenGL.QGLWidget):
             self.objects["colorSensor"].setColor(r, g, b)
 
         # Update image...
-        self.paintGL()
+        self.updateGL()
 
     def setDistanceSensor(self, value):
         """Set the color of the distance sensor (green = far / red = near)"""
@@ -271,7 +271,7 @@ class Robot(QtOpenGL.QGLWidget):
         self.objects["distanceSensor"].setColor(colorR, colorG, 0)
 
         # Update image...
-        self.paintGL()
+        self.updateGL()
 
     def initializeGL(self):
         """Init the 3D graphic"""
