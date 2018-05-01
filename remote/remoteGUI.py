@@ -35,7 +35,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # Set window size...
         self.resize(630, 420)
-        self.setMinimumSize(QtCore.QSize(630, 420))
+        self.setMinimumSize(QtCore.QSize(630, 530))
 
         # Set background color...
         palette = self.palette()

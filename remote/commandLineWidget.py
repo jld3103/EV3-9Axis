@@ -31,7 +31,7 @@ class CommandLine(QtGui.QTextEdit):
         self.setTextCursor(txtCursor)
 
         # All messages...
-        self.allMessages = []
+        self.allMessages = [">>> "]
         self.currentMessage = 0
 
     def newMessage(self, message, sended = False):
@@ -110,6 +110,8 @@ class CommandLine(QtGui.QTextEdit):
 
         # If the pressed key is key up, take one of the last messages...
         elif event.key() == QtCore.Qt.Key_Up:
+            if self.currentMessage == 0:
+                self.allMessages[-1] =  self.toPlainText().split("\n")[0]
             if len(self.allMessages) != 0:
                 self.selectFirstLine()
                 self.insertHtml("<span>%s</span>" % self.allMessages[self.currentMessage])
@@ -163,6 +165,7 @@ class CommandLine(QtGui.QTextEdit):
             # Set second cursor position...
             cursor.setPosition(len(firstLine), QtGui.QTextCursor.MoveAnchor)
             self.setTextCursor(cursor)
+            
 
         # Give Qt the signal...
         QtGui.QTextEdit.keyPressEvent(self,  event)
