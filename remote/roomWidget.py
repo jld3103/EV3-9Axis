@@ -148,6 +148,7 @@ class Grid():
 
     def findOnesWay(self, end):
         """Execute the A*"""
+        
 
         # Store the data
         self.start = self.current
@@ -217,7 +218,6 @@ class Grid():
                 info("No solution!")
                 QtGui.QMessageBox.warning(None, "A*", "No solution!", "Ok")
                 return
-
         self.parent.bluetooth.send(Message("current", str(self.current.x()) + ":" + str(self.current.y())))
 
         # Send the commands for the path to the ev3...

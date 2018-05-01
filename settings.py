@@ -32,12 +32,12 @@ class Settings():
         except:
             error("Cannot find the settings file")
 
-    def get(self, key):
+    def get(self, key, default = None):
         """Get a value in the settings"""
         try:
             return self.settings[key]
         except:
-            return None
+            return default
 
     def set(self, key, value):
         """Set a value in the dictionary"""

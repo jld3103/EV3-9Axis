@@ -12,6 +12,7 @@ import remote.commandLineWidget as commandLineWidget
 import remote.robotWidget as robotWidget
 import remote.roomWidget as roomWidget
 import remote.selectDeveiceDialog as selectDeveiceDialog
+import remote.calibrateDialog as calibrateDialog
 
 # Import all tool...
 from constants import *
@@ -97,6 +98,18 @@ class MainWindow(QtGui.QMainWindow):
         self.showReceivedMsgAction = QtGui.QAction(text, self)
         self.showReceivedMsgAction.triggered.connect(self.onShowReceivedMsg)
         cmdMenu.addAction(self.showReceivedMsgAction)
+        
+        # Create main menu ev3...
+        ev3Menu = mainMenu.addMenu('&EV3')
+        self.calibrateFAction = QtGui.QAction("&Calibrate forward", self)
+        self.calibrateRAction = QtGui.QAction("&Calibrate turn right", self)
+        self.calibrateLAction = QtGui.QAction("&Calibrate turn left", self)
+        self.calibrateFAction.triggered.connect(self.onCalibrateF)
+        self.calibrateRAction.triggered.connect(self.onCalibrateR)
+        self.calibrateLAction.triggered.connect(self.onCalibrateL)
+        ev3Menu.addAction(self.calibrateFAction)
+        ev3Menu.addAction(self.calibrateLAction)
+        ev3Menu.addAction(self.calibrateRAction)
 
         # Connect the bluetoothEvent signal...
         self.bluetoothEvent.connect(self.onBluetoothEvent)
@@ -230,6 +243,18 @@ class MainWindow(QtGui.QMainWindow):
             QtGui.QMessageBox.information(None, "Bluetooth", "Disconnected...", QtGui.QMessageBox.Ok)
         elif value == "Failed to connect":
             QtGui.QMessageBox.information(None, "Bluetooth", "Failed to connect!", QtGui.QMessageBox.Ok)
+            
+    def onCalibrateF(self):
+        dialog = calibrateDialog.CalibrateDialog(self, mode="Forward")
+        dialog.show()
+        
+    def onCalibrateR(self):
+        dialog = calibrateDialog.CalibrateDialog(self, mode="Right")
+        dialog.show()
+        
+    def onCalibrateL(self):
+        dialog = calibrateDialog.CalibrateDialog(self, mode="Left")
+        dialog.show()
 
     def handleSelectDevice(self, value):
         """Show a dialog for selecting a bluetooth device"""
