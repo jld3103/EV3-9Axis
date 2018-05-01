@@ -9,6 +9,7 @@ from constants import *
 from logger import *
 import queue
 import time
+import threading
 
 class EV3:
     """Controls the EV3"""
@@ -19,6 +20,7 @@ class EV3:
         self.screen = ev3.Screen()
 
         self.orientation = 0 # Top: 0 / Right: 1 / Bottom: 2 / Left: 3
+        self.current = "0:0"
 
         # Init all sensors...
         self.touchSensor = ev3.TouchSensor()
@@ -27,8 +29,8 @@ class EV3:
         #self.mpu9250 = MPU9250.MPU9250()
 
         # Init all motors...
-        self.motorR = ev3.LargeMotor('outC')
-        self.motorL = ev3.LargeMotor('outA')
+        self.motorR = ev3.LargeMotor("outC")
+        self.motorL = ev3.LargeMotor("outA")
 
         # Create the queues for the bluetooth data...
         self.bluetoothReciveQueue = queue.Queue()
@@ -49,6 +51,36 @@ class EV3:
         self.bluetooth.addListener("gyro", self.sendGyroData)
         self.bluetooth.addListener("mag", self.sendMagData)
         self.bluetooth.addListener("close", self.close)
+
+        threading.Thread(target = self.listenPath).start()
+
+    def listenPath(self):
+        while True:
+            try:
+                data = self.bluetooth.pathQueue.get(timeout = 1).split(": ")
+                channel = data[0]
+                value = data[1]
+                if channel == "current":
+                    self.current = value
+                elif channel == "forward":
+                    for i in range(int(value)):
+                        x = int(self.current.split(":")[0])
+                        y = int(self.current.split(":")[1])
+                        o = self.orientation
+                        if o == 0:
+                            y -= 1
+                        elif o == 1:
+                            x += 1
+                        elif o == 2:
+                            y += 1
+                        elif o == 3:
+                            x -= 1
+                        self.current = str(x) + ":" + str(y)
+                elif channel == "turn":
+                    self.orientation = int(value)
+            except:
+                if not self.bluetooth.isRunning:
+                    break
 
     def receivedData(self, function, value):
         """Execute the listener for the channel"""
@@ -100,6 +132,38 @@ class EV3:
             self.screen.draw.point((x, y))
         self.screen.update()
         return ("screen",  value)
+
+    def forward(self, *args):
+        """Move forward"""
+        value = "".join(args)
+        # Get time and speed...
+        fragments = value.split(":")
+        time = int(fragments[0].strip())
+        speed = int(fragments[1].strip())
+
+        # Run the motor...
+        try:
+            self.motorR.run_timed(time_sp = time, speed_sp = speed)
+            self.motorL.run_timed(time_sp = time, speed_sp = speed)
+            return ("motorRL", "%d:%d" % (time, speed))
+        except:
+            return ("motorRL",  "Device not connected")
+
+    def rotate(self, *args):
+        """Rotate around itself"""
+        value = "".join(args)
+        # Get time and speed...
+        fragments = value.split(":")
+        time = int(fragments[0].strip())
+        speed = int(fragments[1].strip())
+
+        # Run the motor...
+        try:
+            self.motorR.run_timed(time_sp = time, speed_sp = -speed)
+            self.motorL.run_timed(time_sp = time, speed_sp = speed)
+            return ("motorRL", "%d:%d" % (time, speed))
+        except:
+            return ("motorRL",  "Device not connected")
 
     def turnRight(self, *args):
         """Turn the right motor"""

@@ -8,6 +8,7 @@ from constants import *
 from logger import *
 from message import Message
 from utils import *
+from queue import Queue
 
 setLogLevel(logLevel)
 
@@ -29,6 +30,9 @@ class BluetoothThread(threading.Thread):
 
         # Define all channels...
         self.channels = channels
+
+        # Setup queue
+        self.pathQueue = Queue()
 
     def run(self):
         """Create the server in another thread"""
@@ -161,6 +165,8 @@ class BluetoothThread(threading.Thread):
 
                         debug("Received: %s" % (msg[i]))
 
+                        if channel == "forward" or channel == "turn" or channel == "current":
+                            self.pathQueue.put(msg[i])
                         # Check if the channel is in channels...
                         if channel in self.channels:
                             for i in range(len(self.channels[channel])):
