@@ -64,7 +64,7 @@ class SelectDeviceDialog(QtGui.QDialog):
         mac = device.split("-")[1].strip()
         
         # Start the Thread for the bluetooth connection with the selected device...
-        self.parent.bluetooth = communication.BluetoothThread(self.parent.bluetoothEvent, macAddress=mac, channels=self.parent.bluetooth.channels)
+        self.parent.bluetooth = communication.BluetoothThread(self.parent, self.parent.bluetoothEvent, macAddress=mac, channels=self.parent.bluetooth.channels)
         self.parent.bluetooth.setName("BluetoothThread")
         self.parent.bluetooth.start()
         

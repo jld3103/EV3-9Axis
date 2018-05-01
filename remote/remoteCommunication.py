@@ -15,10 +15,11 @@ setLogLevel(logLevel)
 class BluetoothThread(threading.Thread):
     """Control the bluetooth connection"""
 
-    def __init__(self, bluetoothEvent, macAddress = None, channels = {}):
+    def __init__(self, parent, bluetoothEvent, macAddress = None, channels = {}):
         threading.Thread.__init__(self)
 
         self.bluetoothEvent = bluetoothEvent
+        self.parent = parent
 
         self.connected = False
 
@@ -174,6 +175,11 @@ class BluetoothThread(threading.Thread):
 
     def send(self, message):
         """Send data to bluetooth device"""
+        
+        # Inform the command line (For debugging)...
+        if self.parent.settings.get("showSendedMsg"):
+            self.parent.commandLine.newMessage(message, sended = True)
+        
         text = str(message)
         debug("Send '%s' to bluetooth device" % text)
         global s
@@ -183,10 +189,11 @@ class BluetoothThread(threading.Thread):
             error("Failed to send: %s" % e)
 
             # Save new status...
-            self.connected = False
+            if self.connected:
+                self.connected = False
 
-            # Inform the GUI...
-            self.bluetoothEvent.emit(Message(channel = "connection", value = "Disconnected"))
+                # Inform the GUI...
+                self.bluetoothEvent.emit(Message(channel = "connection", value = "Disconnected"))
 
     def listen(self):
         """Receive messages with a callback"""

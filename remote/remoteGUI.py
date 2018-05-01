@@ -82,12 +82,27 @@ class MainWindow(QtGui.QMainWindow):
         self.showSetsAction = QtGui.QAction(text, self)
         self.showSetsAction.triggered.connect(self.onShowSets)
         roomMenu.addAction(self.showSetsAction)
+        
+        # Create main menu commmand line...
+        cmdMenu = mainMenu.addMenu('&Command line')
+        text = "&Show sended messages"
+        if self.settings.get("showSendedMsg"):
+            text = "&Hide sended messages"
+        self.showSendedMsgAction = QtGui.QAction(text, self)
+        self.showSendedMsgAction.triggered.connect(self.onShowSendedMsg)
+        cmdMenu.addAction(self.showSendedMsgAction)        
+        text = "&Show received messages"
+        if self.settings.get("showReceivedMsg"):
+            text = "&Hide received messages"
+        self.showReceivedMsgAction = QtGui.QAction(text, self)
+        self.showReceivedMsgAction.triggered.connect(self.onShowReceivedMsg)
+        cmdMenu.addAction(self.showReceivedMsgAction)
 
         # Connect the bluetoothEvent signal...
         self.bluetoothEvent.connect(self.onBluetoothEvent)
 
         # Start the Thread for the bluetooth connection...
-        self.bluetooth = communication.BluetoothThread(self.bluetoothEvent)
+        self.bluetooth = communication.BluetoothThread(self, self.bluetoothEvent)
         self.bluetooth.setName("BluetoothThread")
         self.bluetooth.start()
 
@@ -139,6 +154,22 @@ class MainWindow(QtGui.QMainWindow):
         rect = QtCore.QRect(x, y, x2, y2)
         return rect
         
+    def onShowReceivedMsg(self):
+        if self.settings.get("showReceivedMsg"):
+            self.settings.set("showReceivedMsg", False)
+            self.showReceivedMsgAction.setText("Show received messages")
+        else:
+            self.settings.set("showReceivedMsg", True)
+            self.showReceivedMsgAction.setText("Hide received messages")
+        
+    def onShowSendedMsg(self):
+        if self.settings.get("showSendedMsg"):
+            self.settings.set("showSendedMsg", False)
+            self.showSendedMsgAction.setText("Show sended messages")
+        else:
+            self.settings.set("showSendedMsg", True)
+            self.showSendedMsgAction.setText("Hide sended messages")
+        
     def onShowSets(self):
         if self.settings.get("showSets"):
             self.settings.set("showSets", False)
@@ -164,7 +195,7 @@ class MainWindow(QtGui.QMainWindow):
         if not self.bluetooth.connected and not self.bluetooth.isAlive():
             # Start the Thread for the bluetooth connection...
             info("Send connect signal")
-            self.bluetooth = communication.BluetoothThread(self.bluetoothEvent, self.bluetooth.channels)
+            self.bluetooth = communication.BluetoothThread(self, self.bluetoothEvent, self.bluetooth.channels)
             self.bluetooth.setName("BluetoothThread")
             self.bluetooth.start()
 
@@ -176,7 +207,8 @@ class MainWindow(QtGui.QMainWindow):
     def onBluetoothEvent(self, message):
         """Handle the bluetooth events"""
         
-        self.commandLine.newMessage(message)
+        if self.settings.get("showReceivedMsg"):
+            self.commandLine.newMessage(message)
 
         # Execute the function for this channel...
         if message.channel in self.bluetooth.channels and not message.value == "Device not connected":

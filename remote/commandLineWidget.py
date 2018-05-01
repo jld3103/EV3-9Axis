@@ -34,7 +34,7 @@ class CommandLine(QtGui.QTextEdit):
         self.allMessages = []
         self.currentMessage = 0
 
-    def newMessage(self, message):
+    def newMessage(self, message, sended = False):
         """Insert a message in the second line"""
 
         # Get first line of the QTextEdit
@@ -46,8 +46,11 @@ class CommandLine(QtGui.QTextEdit):
         self.setTextCursor(txtCursor)
 
         # Insert the message...
-        self.insertHtml("<span>>>> </span><span style='color:red;'>%s: </span><span style='color:blue;'>%s</span><br>" % (message.channel, message.value))
-
+        if sended:
+            self.insertHtml("<span>>>> </span><span style='color:green;'>%s: </span><span style='color:blue;'>%s</span><br>" % (message.channel, message.value))
+        else:
+            self.insertHtml("<span>>>> </span><span style='color:red;'>%s: </span><span style='color:blue;'>%s</span><br>" % (message.channel, message.value))
+        
         # Set the cursor to the end of the first line...
         txtCursor.setPosition(len(firstLine))
         self.setTextCursor(txtCursor)
@@ -82,8 +85,6 @@ class CommandLine(QtGui.QTextEdit):
 
     def keyPressEvent(self,  event):
         """Handle the keys"""
-
-        info(self.textCursor().anchor())
 
         # Check if the pressed key is return...
         if event.key() == QtCore.Qt.Key_Return:
