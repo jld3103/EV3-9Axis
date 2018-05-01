@@ -152,18 +152,21 @@ class BluetoothThread(threading.Thread):
                 if msg[i] != "'":
                     if msg[i].startswith("b'"):
                         msg[i] = msg[2:]
-                    debug("Received: %s" % (msg[i]))
 
                     # Split the data in channel and value...
                     fragments = str(msg[i]).split(": ")
-                    channel = fragments[0].strip()
-                    value = fragments[1].strip()
+                    if len(fragments) == 2:
+                        channel = fragments[0].strip()
+                        value = fragments[1].strip()
 
-                    # Check if the channel is in channels...
-                    if channel in self.channels:
-                        for i in range(len(self.channels[channel])):
-                            listener = threading.Thread(target = self.receivedData, args = (self.channels[channel][i], value))
-                            listener.start()
+                        debug("Received: %s" % (msg[i]))
 
+                        # Check if the channel is in channels...
+                        if channel in self.channels:
+                            for i in range(len(self.channels[channel])):
+                                listener = threading.Thread(target = self.receivedData, args = (self.channels[channel][i], value))
+                                listener.start()
+                    elif len(fragments) == 1:
+                        self.closeServer()
 
         info("Stop listening")
