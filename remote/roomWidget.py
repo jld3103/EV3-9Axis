@@ -142,7 +142,7 @@ class Grid():
         self.zoom = 0.8
         self.center = True
         self.scale = True
-        self.squareSize = 20
+        self.squareSize = 30
         self.scaledSquareSize = 20
         self.startPos = QtCore.QPoint(0, 0)
 
@@ -177,8 +177,6 @@ class Grid():
                 if current == self.end:
                     info("Done!")
                     self.finding = False
-                    # Set the end position to the current position...
-                    self.current = self.end
 
                 self.openSet.remove(current)
                 self.closedSet.append(current)
@@ -220,6 +218,8 @@ class Grid():
                 info("No solution!")
                 QtGui.QMessageBox.warning(None, "A*", "No solution!", "Ok")
                 return
+
+        self.parent.bluetooth.send(Message("current", str(self.current.x()) + ":" + str(self.current.y())))
 
         # Send the commands for the path to the ev3...
         bluetoothCommands = self.getCommandsForPath(self.path)
@@ -275,9 +275,6 @@ class Grid():
             else:
                 commands.append(Message("turn", nextOrientation))
                 currentOrientation = nextOrientation
-
-        # Set the new orientation to the current orientation...
-        self.currentOrientation = currentOrientation
 
         return commands
 
@@ -408,7 +405,9 @@ class Grid():
         for line in self.grid:
             x = 0
             for square in line:
-                if square.state:
+                if square == self.current:
+                    square.draw(painter, (255, 255, 0))
+                elif square.state:
                     square.draw(painter, (250, 250, 250))
                 elif square in self.path:
                     square.draw(painter, (0, 0, 255))

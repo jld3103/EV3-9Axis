@@ -7,6 +7,7 @@ from constants import *
 from logger import *
 from message import Message
 from utils import *
+import time
 
 s = None
 setLogLevel(logLevel)
@@ -46,11 +47,12 @@ class BluetoothThread(threading.Thread):
         """Add a listener for a channel"""
 
         debug("Add new listener for the channel '%s': %s" % (channel, callback))
-        while not self.connected:
-            pass
-        threading.Thread(target=self._addListener(channel, callback)).start()
+
+        threading.Thread(target=self._addListener, args = (channel, callback)).start()
 
     def _addListener(self, channel, callback):
+        while not self.connected:
+            time.sleep(0.5)
         if not channel in self.channels:
             self.channels[channel] = [callback]
             if self.connected:
