@@ -4,7 +4,7 @@
 from PyQt4 import QtGui, QtCore
 from constants import *
 from logger import *
-
+from message import Message
 
 
 class Square():
@@ -15,11 +15,9 @@ class Square():
         self._x = x
         self._y = y
         
-        self.modified = True
-
         self.state = state # None is not discovered, True is a wall, False is floor
-        self.inPath = False
         self.previous = None
+        self.inPath = False
 
         self.f = 0
         self.g = 0
@@ -33,7 +31,6 @@ class Square():
         self.g = 0
         self.h = 0
         
-        self.modified = True
         
     def getNeighbours(self):
         x = self.x()
@@ -115,9 +112,7 @@ class Square():
 
     def updateState(self, newState):
         """Update the square state"""
-        if newState != self.state:
-            self.state = newState
-            self.modified = True
+        self.state = newState
 
 class Grid():
     """This class manage the squares"""
@@ -128,6 +123,7 @@ class Grid():
         # Store the location of the EV3...
         self.current = self.grid[0][0]
         self.current.updateState(False)
+        self.currentOrientation = 0     # Top: 0 / Right: 1 / Bottom: 2 / Left: 3
 
         # Store sets...
         self.openSet = []
@@ -137,11 +133,10 @@ class Grid():
         self.sizeX = 1
         self.sizeY = 1
 
+        self.path = []
+
         # Define parent...
         self.parent = parent
-        
-        # Notice if the grid is modified...
-        self.modified = True
 
         # Settings...
         self.zoom = 0.8
@@ -182,11 +177,9 @@ class Grid():
                 if current == self.end:
                     info("Done!")
                     self.finding = False
-                    # Draw the path
-                    for i in range(len(self.path)):
-                       self.path[i].inPath = True
-                    self.draw(self.parent.image)
-
+                    # Set the end position to the current position...
+                    self.current = self.end
+                    
                 self.openSet.remove(current)
                 self.closedSet.append(current)
                 
@@ -195,7 +188,7 @@ class Grid():
                 for i in range(len(currentNeighbours)):
                     neighbour = currentNeighbours[i]
                     newPath = False
-                    # Check if g should be updated
+                    # Check if g should be updated...
                     if not neighbour in self.closedSet and neighbour.state != True:
                         tG = current.g + 1
                         if neighbour in self.openSet:
@@ -204,16 +197,16 @@ class Grid():
                                 neighbour.g = tG
                                 newPath = True
                         else:
-                            # Update g
+                            # Update g...
                             neighbour.g = tG
                             self.openSet.append(neighbour)
                             newPath = True
                         if newPath:
-                            # Update the other variables if g updated
+                            # Update the other variables if g updated...
                             neighbour.h = self.heuristic(neighbour, self.end)
                             neighbour.f = neighbour.g + neighbour.h
                             neighbour.previous = current
-                # Find path and store
+                # Find path and store...
                 self.path = []
                 t = current
                 self.path.append(self.start)
@@ -222,16 +215,71 @@ class Grid():
                     t = t.previous
             else:
                 self.finding = False
-                # Draw the path
+                # Draw the path...
                 self.draw(self.parent.image)
                 info("No solution!")
                 QtGui.QMessageBox.warning(None, "A*", "No solution!", "Ok")
                 return
-        
+            
+        # Send the commands for the path to the ev3...
+        bluetoothCommands = self.getCommandsForPath(self.path)
+                
+        for command in bluetoothCommands:
+            self.parent.bluetooth.send(command)
+            info(str(command))
+    
+    def getCommandsForPath(self, path):
+        """Put all commands for the ev3 in a list"""
         # There is a solution...
-        self.end.inPath = True
-        self.end.modified = True
-        self.current = self.end
+        commands = []
+        
+        # Put the first square to the end...
+        path.append(path[0])
+        del path[0]
+        
+        # Get the current orientation...
+        currentOrientation = self.currentOrientation
+        
+        i = 0
+        
+        while i < len(path):
+            # Get the current and next square...
+            currentSquare = path[len(path)-i-1]
+            nextSquare = path[len(path)-i-2]
+            if i == len(path)-1:
+                break
+                
+            nX = nextSquare.x()
+            nY = nextSquare.y()
+            cX = currentSquare.x()
+            cY = currentSquare.y()
+            
+            # Get the next orientation...
+            if nX > cX:
+                nextOrientation = 1
+            elif nX < cX:
+                nextOrientation = 3
+            elif nY < cY:
+                nextOrientation = 0
+            elif nY > cY:
+                nextOrientation = 2
+            
+            # Create command...
+            if nextOrientation == currentOrientation:
+                if len(commands) > 0 and commands[-1].channel == "forward":
+                    commands[-1].value += 1
+                else:
+                    commands.append(Message("forward", 1))
+                i += 1
+                    
+            else:
+                commands.append(Message("turn", nextOrientation))
+                currentOrientation = nextOrientation
+        
+        # Set the new orientation to the current orientation...
+        self.currentOrientation = currentOrientation
+                
+        return commands
 
     def heuristic(self, a, b):
         """Calculate the distance"""
@@ -350,8 +398,7 @@ class Grid():
         """Draw the image"""
 
         # Reset old image...
-        if self.modified:
-            image.fill(QtGui.qRgb(150, 150, 150))
+        image.fill(QtGui.qRgb(150, 150, 150))
 
         # Create the painter...
         painter = QtGui.QPainter(image)
@@ -361,26 +408,23 @@ class Grid():
         for line in self.grid:
             x = 0
             for square in line:
-                if self.modified or square.modified:
-                    if square.state == 1:
-                        square.draw(painter, (250, 250, 250))
-                    elif square.inPath:
-                        square.draw(painter, (0, 0, 255))
-                    elif square in self.openSet and self.parent.settings.get("showSets"):
-                        square.draw(painter, (0, 255, 0))
-                    elif square in self.closedSet and self.parent.settings.get("showSets"):
-                        square.draw(painter, (255, 0, 0))
-                    elif square.state == 0:
-                        square.draw(painter, (0, 0, 0))
-                    elif square.state == None and self.parent.settings.get("showUndefinedSquares"):
-                        square.draw(painter, (100, 100, 100))
-                        
-                    square.modified = False
+                if square.state:
+                    square.draw(painter, (250, 250, 250))
+                elif square in self.path:
+                    square.draw(painter, (0, 0, 255))
+                elif square in self.openSet and self.parent.settings.get("showSets"):
+                    square.draw(painter, (0, 255, 0))
+                elif square in self.closedSet and self.parent.settings.get("showSets"):
+                    square.draw(painter, (255, 0, 0))
+                elif square.state == False:
+                    square.draw(painter, (0, 0, 0))
+                elif square.state == None and self.parent.settings.get("showUndefinedSquares"):
+                    square.draw(painter, (100, 100, 100))
+                    
                     
                 x += 1
             y += 1
             
-        self.modified = False
 
         # End painter and update the image...
         painter.end()
@@ -468,7 +512,6 @@ class RoomWidget(QtGui.QWidget):
         self.grid.findOnesWay(self.grid.getSquare(clickedSquare.x(), clickedSquare.y()))
         
         # Draw the grid...
-        self.grid.modified = True
         self.grid.draw(self.image)
 
     def onResetGrid(self):
@@ -476,27 +519,23 @@ class RoomWidget(QtGui.QWidget):
         self.grid = Grid(self)
 
         # Draw the image...
-        self.grid.modified = True
         self.grid.draw(self.image)
 
     def onResetZoom(self):
         """Set zoom to default"""
 
         # Set zoom to default...
-        self.grid.zoom = 1.0
+        self.grid.zoom = 0.9
 
-        # Scale and center the grid only one time...
-        scale_temp = self.grid.scale
+        # Scale and center the grid...
         self.grid.scale = True
         center_temp = self.grid.center
         self.grid.center = True
 
         # Draw the image...
-        self.grid.modified = True
         self.grid.draw(self.image)
 
         # Reset scaling and centering...
-        self.grid.scale = scale_temp
         self.grid.center = center_temp
 
     def onCenter(self):
@@ -505,7 +544,6 @@ class RoomWidget(QtGui.QWidget):
         self.grid.center = True
         
         # Draw the image...
-        self.grid.modified = True
         self.grid.draw(self.image)
 
     def mouseReleaseEvent(self, event):
@@ -520,7 +558,7 @@ class RoomWidget(QtGui.QWidget):
                 self.moved = False
 
                 # Add the square...
-                self.grid.addSquare(square.x(), square.y(), 1)
+                self.grid.addSquare(square.x(), square.y(), True)
 
                 # Draw the image...
                 self.grid.draw(self.image)
@@ -560,7 +598,6 @@ class RoomWidget(QtGui.QWidget):
         self.grid.center = False
 
         # Draw the image...
-        self.grid.modified = True
         self.grid.draw(self.image)
 
     def wheelEvent(self, event):
@@ -568,7 +605,6 @@ class RoomWidget(QtGui.QWidget):
         self.grid.setZoom(event.delta())
 
         # Draw the image...
-        self.grid.modified = True
         self.grid.draw(self.image)
 
     def paintEvent(self, event):
@@ -585,7 +621,6 @@ class RoomWidget(QtGui.QWidget):
         """Update the image"""
         
         # Draw the image...
-        self.grid.modified = True
         self.grid.draw(self.image)
 
     def resizeImage(self, image, newSize):
@@ -598,7 +633,6 @@ class RoomWidget(QtGui.QWidget):
         self.image.fill(QtGui.qRgb(150, 150, 150))
         
         # Paint the image...
-        self.grid.modified = True
         self.grid.draw(self.image)
 
     def closeEvent(self, event):
