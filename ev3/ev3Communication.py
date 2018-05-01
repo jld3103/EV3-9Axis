@@ -158,7 +158,8 @@ class BluetoothThread(threading.Thread):
 
             # Check if the channel is in channels...
             if channel in self.channels:
-                listener = threading.Thread(target = self.receivedData, args = (function, value))
-                listener.start()
+                for i in range(len(self.channels[channel])):
+                    listener = threading.Thread(target = self.receivedData, args = (self.channels[channel][i], value))
+                    listener.start()
 
         info("Stop listening")

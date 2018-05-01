@@ -63,7 +63,7 @@ class EV3:
             
             # If the value is not the same like the last time, send the value to the remote...
             if value != oldValue:
-                oldValue = Value
+                oldValue = value
                 self.bluetooth.send(Message(channel = channel,  value = value))
             
             # If the mode is not updating, send the data only once...
