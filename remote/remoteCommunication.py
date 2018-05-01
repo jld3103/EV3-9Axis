@@ -186,7 +186,8 @@ class BluetoothThread(threading.Thread):
         try:
             s.send(text)
         except OSError as e:
-            error("Failed to send: %s" % e)
+            debug("Failed to send (DEBUG): %s" % e)
+            error("Failed to send")
 
             # Save new status...
             if self.connected:
