@@ -15,7 +15,7 @@ class Square():
         self._x = x
         self._y = y
 
-        self.state = state # None is not discovered, True is a wall, False is floor
+        self.state = state # True is a wall
         self.previous = None
         self.inPath = False
 
@@ -122,7 +122,6 @@ class Grid():
 
         # Store the location of the EV3...
         self.current = self.grid[0][0]
-        self.current.updateState(False)
         self.currentOrientation = 0     # Top: 0 / Right: 1 / Bottom: 2 / Left: 3
 
         # Store sets...
@@ -435,13 +434,11 @@ class Grid():
             file = open(filename, "r")
 
             for line in file:
-                values = line.split(" - ")
-                coordinates = values[0].split(":")
+                coordinates = line.split(":")
                 x = int(coordinates[0])
                 y = int(coordinates[1])
-                state = values[1].strip() == "True"
 
-                self.addSquare(x, y, state)
+                self.addSquare(x, y, True)
         except:
             debug("Cannot find file: %s" % filename)
 
@@ -450,8 +447,8 @@ class Grid():
 
         for line in self.grid:
             for square in line:
-                if square.state != None:
-                    file.write("%d:%d - %s\n" % (square.x(), square.y(), square.state))
+                if square.state == True:
+                    file.write("%d:%d\n" % (square.x(), square.y()))
         file.close()
 
 class RoomWidget(QtGui.QWidget):
@@ -501,7 +498,6 @@ class RoomWidget(QtGui.QWidget):
         """Set the start position"""
         clickedSquare = self.grid.getSquareAtCoordinate(self.mousePos.x(), self.mousePos.y())
         self.grid.current = self.grid.getSquare(clickedSquare.x(), clickedSquare.y())
-        self.grid.current.updateState(False)
 
         # Draw the square...
         self.grid.draw(self.image)
