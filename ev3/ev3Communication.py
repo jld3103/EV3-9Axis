@@ -151,7 +151,7 @@ class BluetoothThread(threading.Thread):
             for i in range(len(msg)):
                 if msg[i] != "'":
                     if msg[i].startswith("b'"):
-                        msg[i] = msg[2:]
+                        msg[i] = msg[i][2:]
 
                     # Split the data in channel and value...
                     fragments = str(msg[i]).split(": ")

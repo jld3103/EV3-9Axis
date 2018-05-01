@@ -18,7 +18,9 @@ class EV3:
         # Init screen...
         self.screen = ev3.Screen()
 
-        # Init all snesors...
+        self.orientation = 0 # Top: 0 / Right: 1 / Bottom: 2 / Left: 3
+
+        # Init all sensors...
         self.touchSensor = ev3.TouchSensor()
         self.infraredSensor = ev3.InfraredSensor()
         self.colorSensor = ev3.ColorSensor()
