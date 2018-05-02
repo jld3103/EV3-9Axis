@@ -71,31 +71,32 @@ class MainWindow(QtGui.QMainWindow):
 
         # Create main menu room...
         roomMenu = mainMenu.addMenu('&Room')
-        text = "&Show floor squares"
-        if self.settings.get("showFloorSquare"):
-            text = "&Hide floor squares"
-        self.showFloorSquareAction = QtGui.QAction(text, self)
+        if self.settings.get("showFloorSquare", default = True):
+            self.showFloorSquareAction = QtGui.QAction("&Hide floor squares", self)
+        else:
+            self.showFloorSquareAction = QtGui.QAction("&Show floor squares", self)
         self.showFloorSquareAction.triggered.connect(self.onShowFloorSquare)
         roomMenu.addAction(self.showFloorSquareAction)
-        text = "&Show sets"
-        if self.settings.get("showSets"):
-            text = "&Hide sets"
-        self.showSetsAction = QtGui.QAction(text, self)
+        if self.settings.get("showSets", default = False):
+            self.showSetsAction = QtGui.QAction("&Hide sets", self)
+        else:
+            self.showSetsAction = QtGui.QAction("&Show sets", self)
         self.showSetsAction.triggered.connect(self.onShowSets)
         roomMenu.addAction(self.showSetsAction)
 
         # Create main menu commmand line...
         cmdMenu = mainMenu.addMenu('&Command line')
-        text = "&Show sended messages"
-        if self.settings.get("showSendedMsg"):
-            text = "&Hide sended messages"
-        self.showSendedMsgAction = QtGui.QAction(text, self)
+        if self.settings.get("showSendedMsg", default = True):
+            self.showSendedMsgAction = QtGui.QAction("&Hide sended messages", self)
+        else:
+            self.showSendedMsgAction = QtGui.QAction("&Show sended messages", self)
+        self.showSendedMsgAction.triggered.connect(self.onShowSendedMsg)
         self.showSendedMsgAction.triggered.connect(self.onShowSendedMsg)
         cmdMenu.addAction(self.showSendedMsgAction)
-        text = "&Show received messages"
-        if self.settings.get("showReceivedMsg"):
-            text = "&Hide received messages"
-        self.showReceivedMsgAction = QtGui.QAction(text, self)
+        if self.settings.get("showReceivedMsg", default = True):
+            self.showReceivedMsgAction = QtGui.QAction("&Hide received messages", self)
+        else:
+            self.showReceivedMsgAction = QtGui.QAction("&Show received messages", self)
         self.showReceivedMsgAction.triggered.connect(self.onShowReceivedMsg)
         cmdMenu.addAction(self.showReceivedMsgAction)
         

@@ -34,9 +34,11 @@ class Settings():
 
     def get(self, key, default = None):
         """Get a value in the settings"""
-        try:
+        if key in self.settings:
             return self.settings[key]
-        except:
+        else:
+            if default != None: 
+                self.settings[key] = default
             return default
 
     def set(self, key, value):

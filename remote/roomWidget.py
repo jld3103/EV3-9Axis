@@ -17,7 +17,6 @@ class Square():
 
         self.state = state # True is a wall
         self.previous = None
-        self.inPath = False
 
         self.f = 0
         self.g = 0
@@ -25,7 +24,6 @@ class Square():
 
     def resetAlgorithmData(self):
         """Reset all the data for the algorithm"""
-        self.inPath = False
         self.previous = None
         self.f = 0
         self.g = 0

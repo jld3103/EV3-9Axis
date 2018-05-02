@@ -156,15 +156,20 @@ class BluetoothThread(threading.Thread):
         listenThread = threading.Thread(target = self.listen)
         listenThread.setName("ListenThread")
         listenThread.start()
-
+        
         # Calibrate the ev3...
-        self.send(Message(channel = "calibrateForward", value = "%d:%d:%d" % (self.parent.settings.get("calibrateForwardTime", default = 3000), self.parent.settings.get("calibrateForwardSpeedR", default = 255), self.parent.settings.get("calibrateForwardSpeedL", default = 255))))
-        self.send(Message(channel = "calibrateRight", value = "%d:%d:%d" % (self.parent.settings.get("calibrateRightTime", default = 3000), self.parent.settings.get("calibrateRightSpeedR", default = 255), self.parent.settings.get("calibrateRightSpeedL", default = 255))))
-        self.send(Message(channel = "calibrateLeft", value = "%d:%d:%d" % (self.parent.settings.get("calibrateLeftTime", default = 3000), self.parent.settings.get("calibrateLeftSpeedR", default = 255), self.parent.settings.get("calibrateLeftSpeedL", default = 255))))
+        threading.Thread(target=self.clibrateEV3).start()
 
         # Get all updates  from the channels...
         for channel in self.channels:
             self.send(Message(channel = channel,  value = "update"))
+            
+    def clibrateEV3(self):
+        """Calibrate the ev3..."""
+        time.sleep(1)
+        self.send(Message(channel = "calibrateForward", value = "%d:%d:%d" % (self.parent.settings.get("calibrateForwardTime", default = 3000), self.parent.settings.get("calibrateForwardSpeedR", default = 255), self.parent.settings.get("calibrateForwardSpeedL", default = 255))))
+        self.send(Message(channel = "calibrateRight", value = "%d:%d:%d" % (self.parent.settings.get("calibrateRightTime", default = 3000), self.parent.settings.get("calibrateRightSpeedR", default = 255), self.parent.settings.get("calibrateRightSpeedL", default = 255))))
+        self.send(Message(channel = "calibrateLeft", value = "%d:%d:%d" % (self.parent.settings.get("calibrateLeftTime", default = 3000), self.parent.settings.get("calibrateLeftSpeedR", default = 255), self.parent.settings.get("calibrateLeftSpeedL", default = 255))))
 
     def disconnect(self):
         """Disconnect from bluetooth device"""
