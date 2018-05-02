@@ -274,7 +274,7 @@ class Grid():
         value = ""
         
         for command in commands:
-            value += str(command) + "|"
+            value += command.channel + ":" + str(command.value) + "|"
             
         command = Message(channel = "path", value = value[:-1])
 

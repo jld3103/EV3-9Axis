@@ -126,8 +126,8 @@ class EV3:
         
         # Listen until the server close...
         for command in commands:
-            channel = command.split(": ")[0]
-            value = command.split(": ")[1]
+            channel = command.split(":")[0]
+            value = command.split(":")[1]
 
             # If the channel is 'forward', drive the number of squares forward...
             if channel == "forward":
