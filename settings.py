@@ -27,7 +27,7 @@ class Settings():
                     if value == "True":
                         value = True
                     elif value == "False":
-                        value == False
+                        value = False
                 
                 # Add the key and value to the dictionary...
                 self.settings[fragments[0]] = value
