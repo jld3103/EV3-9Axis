@@ -192,9 +192,8 @@ class BluetoothThread(threading.Thread):
     def send(self, message):
         """Send data to bluetooth device"""
 
-        # Inform the command line (For debugging)...
-        if self.parent.settings.get("showSendedMsg"):
-            self.parent.commandLine.newMessage(message, sended = True)
+        # Inform the command line...
+        self.parent.commandLine.newMessage(message, sended = True)
 
         text = str(message) + ";"
         debug("Send '%s' to bluetooth device" % text)

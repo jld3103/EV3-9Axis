@@ -13,6 +13,7 @@ import remote.robotWidget as robotWidget
 import remote.roomWidget as roomWidget
 import remote.selectDeveiceDialog as selectDeveiceDialog
 import remote.calibrateDialog as calibrateDialog
+import remote.filterDialog as filterDialog
 
 # Import all tool...
 from constants import *
@@ -91,7 +92,6 @@ class MainWindow(QtGui.QMainWindow):
         else:
             self.showSendedMsgAction = QtGui.QAction("&Show sended messages", self)
         self.showSendedMsgAction.triggered.connect(self.onShowSendedMsg)
-        self.showSendedMsgAction.triggered.connect(self.onShowSendedMsg)
         cmdMenu.addAction(self.showSendedMsgAction)
         if self.settings.get("showReceivedMsg", default = True):
             self.showReceivedMsgAction = QtGui.QAction("&Hide received messages", self)
@@ -99,6 +99,9 @@ class MainWindow(QtGui.QMainWindow):
             self.showReceivedMsgAction = QtGui.QAction("&Show received messages", self)
         self.showReceivedMsgAction.triggered.connect(self.onShowReceivedMsg)
         cmdMenu.addAction(self.showReceivedMsgAction)
+        self.channelFilterAction = QtGui.QAction("&Manage channel filter", self)
+        self.channelFilterAction.triggered.connect(self.onManageChannelFilter)
+        cmdMenu.addAction(self.channelFilterAction)
         
         # Create main menu ev3...
         ev3Menu = mainMenu.addMenu('&EV3')
@@ -163,6 +166,11 @@ class MainWindow(QtGui.QMainWindow):
         y2 = self.size().height() - self.menubarHeight * 2 - self.size().width() * 0.2 -2
         rect = QtCore.QRect(x, y, x2, y2)
         return rect
+        
+    def onManageChannelFilter(self):
+        """Show the filter dialog"""
+        dialog = filterDialog.FilterDialog(self)
+        dialog.show()
 
     def onShowReceivedMsg(self):
         if self.settings.get("showReceivedMsg"):
@@ -216,9 +224,9 @@ class MainWindow(QtGui.QMainWindow):
 
     def onBluetoothEvent(self, message):
         """Handle the bluetooth events"""
-
-        if self.settings.get("showReceivedMsg"):
-            self.commandLine.newMessage(message)
+        
+        # Inform the command line...
+        self.commandLine.newMessage(message)
 
         # Execute the function for this channel...
         if message.channel in self.bluetooth.channels and not message.value == "Device not connected":

@@ -18,6 +18,7 @@ class CommandLine(QtGui.QTextEdit):
         super(CommandLine,  self).__init__(parent)
 
         self.bluetooth = bluetooth
+        self.parent = parent
 
         # Set font size...
         font = QtGui.QFont()
@@ -36,24 +37,31 @@ class CommandLine(QtGui.QTextEdit):
 
     def newMessage(self, message, sended = False):
         """Insert a message in the second line"""
+        
+        # If the message is received, check if received msgs should be shown...
+        if not ( not sended and not self.parent.settings.get("showReceivedMsg", default = True)):
+            # If the message is sende, check if sended msgs should be shown...
+            if not (sended and not self.parent.settings.get("showSendedMsg", default = True)):
+                # If the channel is in the channel filter, hide this channel...
+                if not message.channel in self.parent.settings.get("commandLineFilter", default = "").split("|"):
 
-        # Get first line of the QTextEdit
-        firstLine = self.toPlainText().split("\n")[0]
+                    # Get first line of the QTextEdit
+                    firstLine = self.toPlainText().split("\n")[0]
 
-        # Set the cursor to the start of the second line...
-        txtCursor = self.textCursor()
-        txtCursor.setPosition(len(firstLine)+1)
-        self.setTextCursor(txtCursor)
+                    # Set the cursor to the start of the second line...
+                    txtCursor = self.textCursor()
+                    txtCursor.setPosition(len(firstLine)+1)
+                    self.setTextCursor(txtCursor)
 
-        # Insert the message...
-        if sended:
-            self.insertHtml("<span>>>> </span><span style='color:green;'>%s: </span><span style='color:blue;'>%s</span><br>" % (message.channel, message.value))
-        else:
-            self.insertHtml("<span>>>> </span><span style='color:red;'>%s: </span><span style='color:blue;'>%s</span><br>" % (message.channel, message.value))
+                    # Insert the message...
+                    if sended:
+                        self.insertHtml("<span>>>> </span><span style='color:green;'>%s: </span><span style='color:blue;'>%s</span><br>" % (message.channel, message.value))
+                    else:
+                        self.insertHtml("<span>>>> </span><span style='color:red;'>%s: </span><span style='color:blue;'>%s</span><br>" % (message.channel, message.value))
 
-        # Set the cursor to the end of the first line...
-        txtCursor.setPosition(len(firstLine))
-        self.setTextCursor(txtCursor)
+                    # Set the cursor to the end of the first line...
+                    txtCursor.setPosition(len(firstLine))
+                    self.setTextCursor(txtCursor)
 
     def sendMessage(self, text):
         """Send the message to ev3"""
