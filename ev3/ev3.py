@@ -106,12 +106,15 @@ class EV3:
         return ("calibrateRight", "Success")
 
     def _1Forward(self):
+        """Drive one square forward"""
         info("1 forward")
 
     def _90Left(self):
+        """Turn 90° left"""
         info("90 left")
 
     def _90Right(self):
+        """Turn 90° right"""
         info("90 right")
         
     def setCurrent(self, *args):
@@ -272,6 +275,7 @@ class EV3:
             return ("motorL", "Device not connected")
 
     def sendColorValue(self, *args):
+        """Send the value of the color sensor"""
         value = "".join(args)
         if value == "color":
             try:

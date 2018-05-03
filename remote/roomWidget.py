@@ -85,12 +85,13 @@ class Square():
         squareHeight = int(height / (self.grid.sizeY))
 
         # Take the smaller side for the width and height of the squares...
-
         self.grid.scaledSquareSize = (min(squareWidth, squareHeight))
-
+        
+        # If scaling is activated, scale the square size...
         if self.grid.scale:
             self.grid.squareSize = self.grid.scaledSquareSize
-
+        
+        # Multiply the square size by the zoom factor...
         squareSizeZoomed = self.grid.squareSize * self.grid.zoom
 
         # Calculate the border for drawing the room in the center of the image...
@@ -114,6 +115,7 @@ class Square():
 
 class Grid():
     """This class manage the squares"""
+    
     def __init__(self, parent):
         # Define the grid with only one floor square...
         self.grid = [[Square(self)]]
@@ -129,7 +131,8 @@ class Grid():
         # Define the grid sizes...
         self.sizeX = 1
         self.sizeY = 1
-
+        
+        # Define the current path...
         self.path = []
 
         # Define parent...
@@ -146,7 +149,6 @@ class Grid():
 
     def findOnesWay(self, end):
         """Execute the A*"""
-        
 
         # Store the data
         self.start = self.current
@@ -155,14 +157,16 @@ class Grid():
         self.closedSet = []
         self.path = []
         self.finding = True
-
+        
+        # Add the start square to the possible squares...
         self.openSet.append(self.start)
-
+        
+        # Reset the old algorithm data...
         for line in self.grid:
             for square in line:
                 square.resetAlgorithmData()
 
-        while self.finding: #TODO: Go the shortest way with the fewest corners (Turning the robot need much time and can be incorrect)
+        while self.finding:
             # Check if way possible
             if len(self.openSet) > 0:
                 winner = 0
@@ -175,10 +179,12 @@ class Grid():
                 if current == self.end:
                     info("Done!")
                     self.finding = False
-
+                
+                # Shift the current square in the close sets...
                 self.openSet.remove(current)
                 self.closedSet.append(current)
-
+                
+                # Get the neighbours of the current square...
                 currentNeighbours = current.getNeighbours()
 
                 for i in range(len(currentNeighbours)):
@@ -242,19 +248,14 @@ class Grid():
             if i == len(path)-1:
                 break
 
-            nX = nextSquare.x()
-            nY = nextSquare.y()
-            cX = currentSquare.x()
-            cY = currentSquare.y()
-
             # Get the next orientation...
-            if nX > cX:
+            if nextSquare.x() > currentSquare.x():
                 nextOrientation = 1
-            elif nX < cX:
+            elif nextSquare.x() < currentSquare.x():
                 nextOrientation = 3
-            elif nY < cY:
+            elif nextSquare.y() < currentSquare.y():
                 nextOrientation = 0
-            elif nY > cY:
+            elif nextSquare.y() > currentSquare.y():
                 nextOrientation = 2
 
             # Create command...
@@ -264,7 +265,6 @@ class Grid():
                 else:
                     commands.append(Message("forward", 1))
                 i += 1
-
             else:
                 commands.append(Message("turn", nextOrientation))
                 currentOrientation = nextOrientation
@@ -279,10 +279,11 @@ class Grid():
         return command
 
     def heuristic(self, a, b):
-        """Calculate the distance"""
+        """Calculate the distance to the end square"""
         return abs(a.x() - b.x()) + abs(a.y() - b.y())
 
     def setZoom(self, delta):
+        """Set the zoom factor"""
         # Zoom in or out...
         if delta < 0:
             self.zoom -= 0.1
@@ -431,9 +432,12 @@ class Grid():
         self.parent.update()
 
     def load(self, filename):
+        """Load the old grid from a text file"""
         try:
+            # Open the file...
             file = open(filename, "r")
-
+            
+            # Read each line...
             for line in file:
                 coordinates = line.split(":")
                 x = int(coordinates[0])
@@ -444,8 +448,10 @@ class Grid():
             debug("Cannot find file: %s" % filename)
 
     def save(self, filename):
+        """Save the current grid in a text file"""
         file = open(filename, "w")
-
+        
+        # Write a line for each wall (x:y)...
         for line in self.grid:
             for square in line:
                 if square.state == True:
@@ -504,6 +510,7 @@ class RoomWidget(QtGui.QWidget):
         self.grid.draw(self.image)
 
     def onEndPos(self):
+        """Set the end position of the algorithm"""
         clickedSquare = self.grid.getSquareAtCoordinate(self.mousePos.x(), self.mousePos.y())
         self.grid.findOnesWay(self.grid.getSquare(clickedSquare.x(), clickedSquare.y()))
 
@@ -536,7 +543,7 @@ class RoomWidget(QtGui.QWidget):
 
     def onCenter(self):
         """Center the image"""
-
+        # Activate centering...
         self.grid.center = True
 
         # Draw the image...
@@ -544,7 +551,9 @@ class RoomWidget(QtGui.QWidget):
 
     def mouseReleaseEvent(self, event):
         """When the mouse wasn't moved, find square on the click position"""
+        # Allow a small moving...
         if self.moved < 5:
+            # Get the clicked square....
             square = self.grid.getSquareAtCoordinate(event.x(), event.y())
 
             if not square == None:
@@ -632,4 +641,5 @@ class RoomWidget(QtGui.QWidget):
         self.grid.draw(self.image)
 
     def closeEvent(self, event):
+        """Save the grid"""
         self.grid.save(gridFile)

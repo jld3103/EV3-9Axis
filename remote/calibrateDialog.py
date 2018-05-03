@@ -23,7 +23,7 @@ class CalibrateDialog(QtGui.QDialog):
         self.mode = mode
         self.parent = parent
 
-
+        # Get the current values...
         self.time = self.parent.settings.get("calibrate%sTime" % mode, default = 3000)
         self.speedR = self.parent.settings.get("calibrate%sSpeedR" % mode, default = 255)
         self.speedL = self.parent.settings.get("calibrate%sSpeedL" % mode, default = 255)
@@ -57,7 +57,7 @@ class CalibrateDialog(QtGui.QDialog):
         self.speedL_slider.setProperty("value", self.speedL)
         self.speedL_slider.valueChanged.connect(self.onSpeedLSlider)
 
-        # Add OK button...
+        # Add Ok button...
         self.btn_ok = QtGui.QPushButton(self)
         self.btn_ok.setGeometry(10, 280, 371, 20)
         self.btn_ok.setText("OK")
@@ -92,12 +92,15 @@ class CalibrateDialog(QtGui.QDialog):
         self.speedR_label.setText("Speed right\n(%d)" % self.speedR)
 
     def onSpeedLSlider(self):
+        """Set the speed left lable on the slider value"""
         self.speedL_label.setText("Speed left\n(%d)" % self.speedL_slider.value())
 
     def onSpeedRSlider(self):
+        """Set the speed right lable on the slider value"""
         self.speedR_label.setText("Speed right\n(%d)" % self.speedR_slider.value())
 
     def onTimeSlider(self):
+        """Set the time lable on the slider value"""
         self.time_label.setText("Time\n(%d)" % self.time_slider.value())
 
     def onOk(self):

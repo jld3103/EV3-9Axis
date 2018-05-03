@@ -13,23 +13,29 @@ import math
 
 setLogLevel(logLevel)
 
+# Move each 3D object...
 moveX = -8.4
 moveY = 0
 moveZ = -9.75
 
+# Define the default color of a 3D object...
 defaultColor = [0.39, 0.39, 0.39, 1.0]
 
 
 class ObjLoader(threading.Thread):
+    """Read the obj file and render a 3D object"""
+    
     def __init__(self, filename, updateEvent):
         threading.Thread.__init__(self)
 
         self.filename = filename
         self.updateEvent = updateEvent
         self.changeYZ = False
-
+        
+        # Set the color...
         self.color = defaultColor
-
+        
+        # Define the coordinates...
         self.vertices = []
         self.triangle_faces = []
         self.quad_faces = []
@@ -107,6 +113,7 @@ class ObjLoader(threading.Thread):
             error("Could not open the .obj file...")
 
     def setColor(self, r = defaultColor[0], g = defaultColor[1], b = defaultColor[2]):
+        """Set the color of the 3D object"""
         self.color = [r, g, b, 1.0]
 
     def getNormal(self, a, b, c):
@@ -190,10 +197,12 @@ class Robot(QtOpenGL.QGLWidget):
     updateEvent = QtCore.pyqtSignal()
 
     def __init__(self, parent, bluetooth):
-        self.parent = parent
         QtOpenGL.QGLWidget.__init__(self, parent)
+        
+        self.parent = parent
         self.yRotDeg = 45
-
+        
+        # Define all objects (The file names will be replace with an ObjLoader object)...
         self.objects = { "brick" : "brick.obj",
                                 "distanceSensorConnector" : "distance_sensor_connector.obj",
                                 "distanceSensor" : "distance_sensor.obj",
@@ -210,6 +219,7 @@ class Robot(QtOpenGL.QGLWidget):
                                 "touchSensor" : "touch_sensor.obj",
                                 "colorSensor" : "color_sensor.obj"}
 
+        # This pyqt signal will be call when a ObjLoader thread is ready with calculating...
         self.updateEvent.connect(self.paintGL)
 
         # Add all listener...

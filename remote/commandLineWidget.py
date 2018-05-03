@@ -35,13 +35,13 @@ class CommandLine(QtGui.QTextEdit):
         self.allMessages = [">>> "]
         self.currentMessage = 0
 
-    def newMessage(self, message, sended = False):
+    def newMessage(self, message, sent = False):
         """Insert a message in the second line"""
         
         # If the message is received, check if received msgs should be shown...
-        if not ( not sended and not self.parent.settings.get("showReceivedMsg", default = True)):
-            # If the message is sende, check if sended msgs should be shown...
-            if not (sended and not self.parent.settings.get("showSendedMsg", default = True)):
+        if not ( not sent and not self.parent.settings.get("showReceivedMsg", default = True)):
+            # If the message is sende, check if sent msgs should be shown...
+            if not (sent and not self.parent.settings.get("showSentMsg", default = True)):
                 # If the channel is in the channel filter, hide this channel...
                 if not message.channel in self.parent.settings.get("commandLineFilter", default = "").split("|"):
 
@@ -54,7 +54,7 @@ class CommandLine(QtGui.QTextEdit):
                     self.setTextCursor(txtCursor)
 
                     # Insert the message...
-                    if sended:
+                    if sent:
                         self.insertHtml("<span>>>> </span><span style='color:green;'>%s: </span><span style='color:blue;'>%s</span><br>" % (message.channel, message.value))
                     else:
                         self.insertHtml("<span>>>> </span><span style='color:red;'>%s: </span><span style='color:blue;'>%s</span><br>" % (message.channel, message.value))

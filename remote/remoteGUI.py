@@ -87,12 +87,12 @@ class MainWindow(QtGui.QMainWindow):
 
         # Create main menu commmand line...
         cmdMenu = mainMenu.addMenu('&Command line')
-        if self.settings.get("showSendedMsg", default = True):
-            self.showSendedMsgAction = QtGui.QAction("&Hide sended messages", self)
+        if self.settings.get("showSentMsg", default = True):
+            self.showSentMsgAction = QtGui.QAction("&Hide sent messages", self)
         else:
-            self.showSendedMsgAction = QtGui.QAction("&Show sended messages", self)
-        self.showSendedMsgAction.triggered.connect(self.onShowSendedMsg)
-        cmdMenu.addAction(self.showSendedMsgAction)
+            self.showSentMsgAction = QtGui.QAction("&Show sent messages", self)
+        self.showSentMsgAction.triggered.connect(self.onShowSentMsg)
+        cmdMenu.addAction(self.showSentMsgAction)
         if self.settings.get("showReceivedMsg", default = True):
             self.showReceivedMsgAction = QtGui.QAction("&Hide received messages", self)
         else:
@@ -142,7 +142,7 @@ class MainWindow(QtGui.QMainWindow):
                             self.size().height() - self.menubarHeight - 1)
         return line
 
-    def getRobotImgRect(self):
+    def getRobotWidgetRect(self):
         """Calculate the rect of the robot img"""
         xPositionRobot = self.size().width() * 0.7 + 1
         rect = QtCore.QRect(xPositionRobot, self.menubarHeight,
@@ -150,7 +150,7 @@ class MainWindow(QtGui.QMainWindow):
                             self.size().width() * 0.2)
         return rect
 
-    def getRoomImgRect(self):
+    def getRoomWidgetRect(self):
         """Calculate the rect of the room img"""
         xPositionRoom = self.size().width() * 0.7
         yPositionRoom = self.size().height() - self.menubarHeight * 2
@@ -173,6 +173,7 @@ class MainWindow(QtGui.QMainWindow):
         dialog.show()
 
     def onShowReceivedMsg(self):
+        """Show the received messages in the command line"""
         if self.settings.get("showReceivedMsg"):
             self.settings.set("showReceivedMsg", False)
             self.showReceivedMsgAction.setText("Show received messages")
@@ -180,15 +181,17 @@ class MainWindow(QtGui.QMainWindow):
             self.settings.set("showReceivedMsg", True)
             self.showReceivedMsgAction.setText("Hide received messages")
 
-    def onShowSendedMsg(self):
-        if self.settings.get("showSendedMsg"):
-            self.settings.set("showSendedMsg", False)
-            self.showSendedMsgAction.setText("Show sended messages")
+    def onShowSentMsg(self):
+        """Show the sent messages in the command line"""
+        if self.settings.get("showSentMsg"):
+            self.settings.set("showSentMsg", False)
+            self.showSentMsgAction.setText("Show sent messages")
         else:
-            self.settings.set("showSendedMsg", True)
-            self.showSendedMsgAction.setText("Hide sended messages")
+            self.settings.set("showSentMsg", True)
+            self.showSentMsgAction.setText("Hide sent messages")
 
     def onShowSets(self):
+        """Show the sets of the algorithm in the room widget"""
         if self.settings.get("showSets"):
             self.settings.set("showSets", False)
             self.showSetsAction.setText("Show sets")
@@ -197,8 +200,8 @@ class MainWindow(QtGui.QMainWindow):
             self.showSetsAction.setText("Hide sets")
         self.room_widget.updateImage()
 
-
     def onShowFloorSquare(self):
+        """Show the floor squares in the room widget"""
         if self.settings.get("showFloorSquare"):
             self.settings.set("showFloorSquare", False)
             self.showFloorSquareAction.setText("Show floor squares")
@@ -254,14 +257,17 @@ class MainWindow(QtGui.QMainWindow):
             QtGui.QMessageBox.information(None, "Bluetooth", "Failed to connect!", QtGui.QMessageBox.Ok)
             
     def onCalibrateF(self):
+        """Calibrate froward on the ev3"""
         dialog = calibrateDialog.CalibrateDialog(self, mode="Forward")
         dialog.show()
         
     def onCalibrateR(self):
+        """Calibrate right on the ev3"""
         dialog = calibrateDialog.CalibrateDialog(self, mode="Right")
         dialog.show()
         
     def onCalibrateL(self):
+        """Calibrate left on the ev3"""
         dialog = calibrateDialog.CalibrateDialog(self, mode="Left")
         dialog.show()
 
@@ -282,8 +288,8 @@ class MainWindow(QtGui.QMainWindow):
 
         # Update TextEdit sizes...
         self.commandLine.setGeometry(self.getTextEditRect())
-        self.robot_widget.setGeometry(self.getRobotImgRect())
-        self.room_widget.setGeometry(self.getRoomImgRect())
+        self.robot_widget.setGeometry(self.getRobotWidgetRect())
+        self.room_widget.setGeometry(self.getRoomWidgetRect())
 
     def closeEvent(self, event):
         """When the window close, close the server, too"""

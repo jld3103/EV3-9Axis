@@ -36,7 +36,6 @@ class BluetoothThread(threading.Thread):
         info("Connecting to EV3")
         try:
             self.connectByLastConnection()
-
         except Exception as e:
             error("Failed to connect: %s" % e)
             self.bluetoothEvent.emit(Message(channel = "connection", value = "Failed to connect"))
@@ -47,14 +46,20 @@ class BluetoothThread(threading.Thread):
         """Add a listener for a channel"""
 
         debug("Add new listener for the channel '%s': %s" % (channel, callback))
-
+        
+        # Add a new listener in a new thread...
         threading.Thread(target=self._addListener, args = (channel, callback)).start()
 
     def _addListener(self, channel, callback):
+        """Wait for a connection and add the listener"""
+        # Wait for a connection...
         while not self.connected:
             time.sleep(0.5)
+            
+        # Add the listener...
         if not channel in self.channels:
             self.channels[channel] = [callback]
+            # Get all updates in this channel...
             if self.connected:
                 self.send(Message(channel = channel,  value = "update"))
         else:
@@ -193,12 +198,13 @@ class BluetoothThread(threading.Thread):
         """Send data to bluetooth device"""
 
         # Inform the command line...
-        self.parent.commandLine.newMessage(message, sended = True)
+        self.parent.commandLine.newMessage(message, sent = True)
 
         text = str(message) + ";"
         debug("Send '%s' to bluetooth device" % text)
         global s
         try:
+            # Send the message...
             s.send(text)
         except OSError as e:
             debug("Failed to send (DEBUG): %s" % e)
@@ -220,6 +226,7 @@ class BluetoothThread(threading.Thread):
 
         while self.connected:
             try:
+                # Get the data...
                 data = s.recv(MSGLEN)
             except OSError:
                 error("Failed to Receive")

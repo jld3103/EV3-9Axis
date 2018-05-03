@@ -6,7 +6,6 @@ from PyQt4 import QtCore, QtGui
 
 from constants import *
 from logger import *
-from message import Message
 
 setLogLevel(logLevel)
 

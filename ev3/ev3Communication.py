@@ -6,9 +6,7 @@ import threading
 from bluetooth import *
 from constants import *
 from logger import *
-from message import Message
 from utils import *
-from queue import Queue
 
 setLogLevel(logLevel)
 

@@ -1,5 +1,5 @@
 # This is a dialog for selecting a bloutooth deveice
-# Author: Finn G.,
+# Author: Finn G.
 
 
 from PyQt4 import QtCore, QtGui
