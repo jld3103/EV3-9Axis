@@ -9,7 +9,6 @@ from constants import *
 from logger import *
 import queue
 import time
-import threading
 
 class EV3:
     """Controls the EV3"""
@@ -69,8 +68,6 @@ class EV3:
         self.bluetooth.addListener("calibrateRight", self.calibrateRight)
         self.bluetooth.addListener("path", self.path)
         self.bluetooth.addListener("current", self.setCurrent)
-
-        threading.Thread(target = self.listenPath).start()
 
     def calibrateForward(self, data):
         if data == "test":
