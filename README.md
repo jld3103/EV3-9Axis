@@ -1,6 +1,6 @@
-# EV3-9Axis
+# EV3-Navigator
 ## What is this?
-Look at the [wiki](https://github.com/jld3103/EV3-9Axis/wiki) find it out!
+Look at the [wiki](https://github.com/jld3103/EV3-Navigator/wiki) find it out!
 ## Install
 Use git
 ```bash
