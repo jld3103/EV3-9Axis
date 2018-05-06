@@ -52,13 +52,13 @@ class BluetoothThread(threading.Thread):
 
     def _addListener(self, channel, callback):
         """Wait for a connection and add the listener"""
-        # Wait for a connection...
-        while not self.connected:
-            time.sleep(0.5)
             
         # Add the listener...
         if not channel in self.channels:
             self.channels[channel] = [callback]
+            # Wait for a connection...
+            while not self.connected:
+                time.sleep(0.5)
             # Get all updates in this channel...
             if self.connected:
                 self.send(Message(channel = channel,  value = "update"))
