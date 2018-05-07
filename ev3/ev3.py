@@ -22,17 +22,17 @@ class EV3:
         self.current = "0:0"
 
         # Calibration data
-        self.cFT = 0
-        self.cFL = 0
-        self.cFR = 0
+        self.cFT = 3000 # cFT = CalibrateForwardTime
+        self.cFL = 255
+        self.cFR = 255
 
-        self.cLT = 0
-        self.cLL = 0
-        self.cLR = 0
+        self.cLT = 3000
+        self.cLL = 255
+        self.cLR = 255
 
-        self.cRT = 0
-        self.cRL = 0
-        self.cRR = 0
+        self.cRT = 3000
+        self.cRL = 255
+        self.cRR = 255
 
         # Init all sensors...
         self.touchSensor = ev3.TouchSensor()
