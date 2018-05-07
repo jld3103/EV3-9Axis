@@ -6,6 +6,7 @@ from PyQt4 import QtCore, QtGui
 
 from constants import *
 from logger import *
+import remote.remoteCommunication as communication
 
 setLogLevel(logLevel)
 

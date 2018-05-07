@@ -50,14 +50,14 @@ class BluetoothThread(threading.Thread):
         # Add a new listener in a new thread...
         threading.Thread(target=self._addListener, args = (channel, callback)).start()
 
-    def _addListener(self, channel, callback):
+    def _addListener(self, channel, callback): #TODO: Add the updater always after a connection...
         """Wait for a connection and add the listener"""
             
         # Add the listener...
         if not channel in self.channels:
             self.channels[channel] = [callback]
             # Wait for a connection...
-            while not self.connected:
+            while not self.connected and self.parent.alive:
                 time.sleep(0.5)
             # Get all updates in this channel...
             if self.connected:
@@ -116,26 +116,28 @@ class BluetoothThread(threading.Thread):
 
     def connectByLastConnection(self):
         """Read stored MAC and connect to it or search for a device and connect to it"""
-        if self.hasStoredMAC():
+        # Connect to the given mac address...
+        if self.macAddress != None:
+            self.connect(self.macAddress)
+        # Connect to stored mac address...
+        elif self.hasStoredMAC():
             try:
                 # Connect to stored device mac...
-                if self.macAddress == None:
-                    self.connect(self.readStoredMAC())
-                # Connect to given address...
-                else:
-                    self.connect(self.macAddress)
+                self.connect(self.readStoredMAC())
             except:
                 # If device not visible or online search for others
                 error("Couldn't connect to device with stored MAC")
-                #traceback.print_exc()
                 try:
                     device = self.searchDevices()
                     if device != None:
                         self.connect(device)
                 except Exception as e:
                     raise e
+        # Connect to a selected device...
         else:
-            self.connect(self.searchDevices())
+            device = self.searchDevices()
+            if device != None:
+                self.connect(device)
 
     def connect(self, mac):
         """Connect to a bluetooth device"""
@@ -163,13 +165,13 @@ class BluetoothThread(threading.Thread):
         listenThread.start()
         
         # Calibrate the ev3...
-        threading.Thread(target=self.clibrateEV3).start()
+        threading.Thread(target=self.calibrateEV3).start()
 
         # Get all updates  from the channels...
         for channel in self.channels:
             self.send(Message(channel = channel,  value = "update"))
             
-    def clibrateEV3(self):
+    def calibrateEV3(self):
         """Calibrate the ev3..."""
         time.sleep(1)
         self.send(Message(channel = "calibrateForward", value = "%d:%d:%d" % (self.parent.settings.get("calibrateForwardTime", default = 3000), self.parent.settings.get("calibrateForwardSpeedR", default = 255), self.parent.settings.get("calibrateForwardSpeedL", default = 255))))

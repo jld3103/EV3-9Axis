@@ -6,11 +6,15 @@ version = "1.2"
 # Import the GUI library PyQt4...
 from PyQt4 import QtCore, QtGui
 
-# Import all widgets and windows...
+# Import the bluetooth communication...
 import remote.remoteCommunication as communication
+
+# Import all widget...
 import remote.commandLineWidget as commandLineWidget
 import remote.robotWidget as robotWidget
 import remote.roomWidget as roomWidget
+
+# Import all dialogs...
 import remote.selectDeveiceDialog as selectDeveiceDialog
 import remote.calibrateDialog as calibrateDialog
 import remote.filterDialog as filterDialog
@@ -31,6 +35,8 @@ class MainWindow(QtGui.QMainWindow):
 
     def __init__(self, version):
         QtGui.QMainWindow.__init__(self)
+        
+        self.alive = True
 
         # Set the window title...
         self.setWindowTitle("EV3 Navigator - v%s" % (version))
@@ -63,58 +69,48 @@ class MainWindow(QtGui.QMainWindow):
         mainMenu = self.menuBar()
         mainMenu.setGeometry(
             QtCore.QRect(0, 0, self.size().width(), self.menubarHeight))
-
-        # Create main menu bluetooth...
+            
+        # Create all main menu entries...
         bluetoothMenu = mainMenu.addMenu('&Bluetooth')
-        self.connectionAction = QtGui.QAction("&Connect", self)
-        self.connectionAction.setStatusTip('Connect to EV3')
-        self.connectionAction.triggered.connect(self.onConnection)
-        bluetoothMenu.addAction(self.connectionAction)
-
-        # Create main menu room...
-        roomMenu = mainMenu.addMenu('&Room')
-        if self.settings.get("showFloorSquare", default = True):
-            self.showFloorSquareAction = QtGui.QAction("&Hide floor squares", self)
-        else:
-            self.showFloorSquareAction = QtGui.QAction("&Show floor squares", self)
-        self.showFloorSquareAction.triggered.connect(self.onShowFloorSquare)
-        roomMenu.addAction(self.showFloorSquareAction)
-        if self.settings.get("showSets", default = False):
-            self.showSetsAction = QtGui.QAction("&Hide sets", self)
-        else:
-            self.showSetsAction = QtGui.QAction("&Show sets", self)
-        self.showSetsAction.triggered.connect(self.onShowSets)
-        roomMenu.addAction(self.showSetsAction)
-
-        # Create main menu commmand line...
+        roomMenu = mainMenu.addMenu('&Room')    
         cmdMenu = mainMenu.addMenu('&Command line')
-        if self.settings.get("showSentMsg", default = True):
-            self.showSentMsgAction = QtGui.QAction("&Hide sent messages", self)
-        else:
-            self.showSentMsgAction = QtGui.QAction("&Show sent messages", self)
-        self.showSentMsgAction.triggered.connect(self.onShowSentMsg)
-        cmdMenu.addAction(self.showSentMsgAction)
-        if self.settings.get("showReceivedMsg", default = True):
-            self.showReceivedMsgAction = QtGui.QAction("&Hide received messages", self)
-        else:
-            self.showReceivedMsgAction = QtGui.QAction("&Show received messages", self)
-        self.showReceivedMsgAction.triggered.connect(self.onShowReceivedMsg)
-        cmdMenu.addAction(self.showReceivedMsgAction)
-        self.channelFilterAction = QtGui.QAction("&Manage channel filter", self)
-        self.channelFilterAction.triggered.connect(self.onManageChannelFilter)
-        cmdMenu.addAction(self.channelFilterAction)
-        
-        # Create main menu ev3...
         ev3Menu = mainMenu.addMenu('&EV3')
+        
+        # Create all actions of the main menu...
+        self.connectionAction = QtGui.QAction("&Connect", self)
+        self.showFloorSquareAction = QtGui.QAction("&%s floor squares" % ("Hide" if self.settings.get("showFloorSquare", default = True) else "Show"), self)
+        self.showSetsAction = QtGui.QAction("&%s sets" % ("Hide" if self.settings.get("showSets", default = False) else "Show"), self)
+        self.showSentMsgAction = QtGui.QAction("&%s sent messages" % ("Hide" if self.settings.get("showSentMsg", default = True) else "Show"), self)
+        self.showReceivedMsgAction = QtGui.QAction("&%s received messages" % ("Hide" if self.settings.get("showReceivedMsg", default = True) else "Show"), self)
+        self.channelFilterAction = QtGui.QAction("&Manage channel filter", self)
         self.calibrateFAction = QtGui.QAction("&Calibrate forward", self)
         self.calibrateRAction = QtGui.QAction("&Calibrate turn right", self)
         self.calibrateLAction = QtGui.QAction("&Calibrate turn left", self)
+ 
+        # Connect all actions of the main menu...
+        self.connectionAction.triggered.connect(self.onConnection)
+        self.showFloorSquareAction.triggered.connect(self.onShowFloorSquare)
+        self.showSetsAction.triggered.connect(self.onShowSets)
+        self.showSentMsgAction.triggered.connect(self.onShowSentMsg)
+        self.showReceivedMsgAction.triggered.connect(self.onShowReceivedMsg)
+        self.channelFilterAction.triggered.connect(self.onManageChannelFilter)
         self.calibrateFAction.triggered.connect(self.onCalibrateF)
         self.calibrateRAction.triggered.connect(self.onCalibrateR)
         self.calibrateLAction.triggered.connect(self.onCalibrateL)
+        
+        # Add all actions to the main menu entries...
+        bluetoothMenu.addAction(self.connectionAction)
+        roomMenu.addAction(self.showFloorSquareAction)
+        roomMenu.addAction(self.showSetsAction)
+        cmdMenu.addAction(self.showSentMsgAction)
+        cmdMenu.addAction(self.showReceivedMsgAction)
+        cmdMenu.addAction(self.channelFilterAction)
         ev3Menu.addAction(self.calibrateFAction)
         ev3Menu.addAction(self.calibrateLAction)
         ev3Menu.addAction(self.calibrateRAction)
+        
+        # Add the status tips......
+        self.connectionAction.setStatusTip('Connect to EV3')
 
         # Connect the bluetoothEvent signal...
         self.bluetoothEvent.connect(self.onBluetoothEvent)
@@ -326,6 +322,5 @@ class RemoteGUI():
         status = self.app.exec_()
 
         # Close programm...
-        global alive
-        alive = False
+        self.window.alive = False
         info("RemoteGUI finished with status %d" % status)
