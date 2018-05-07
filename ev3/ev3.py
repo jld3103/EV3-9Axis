@@ -113,7 +113,7 @@ class EV3:
     def _90Right(self):
         """Turn 90° right"""
         info("90 right")
-        
+
     def setCurrent(self, *args):
         """Set the current square"""
         self.current = "".join(args)
@@ -121,9 +121,9 @@ class EV3:
     def path(self, *args):
         """Listen to the path commands"""
         value = "".join(args)
-        
+
         commands = value.split("|")
-        
+
         # Listen until the server close...
         for command in commands:
             channel = command.split(":")[0]
@@ -155,7 +155,7 @@ class EV3:
                     for i in range(self.orientation - value):
                         self._90Left()
                 self.orientation = value
-                
+
         return ("path", "Success")
 
     def receivedData(self, function, value):

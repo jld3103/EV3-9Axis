@@ -46,13 +46,13 @@ class BluetoothThread(threading.Thread):
         """Add a listener for a channel"""
 
         debug("Add new listener for the channel '%s': %s" % (channel, callback))
-        
+
         # Add a new listener in a new thread...
         threading.Thread(target=self._addListener, args = (channel, callback)).start()
 
     def _addListener(self, channel, callback): #TODO: Add the updater always after a connection...
         """Wait for a connection and add the listener"""
-            
+
         # Add the listener...
         if not channel in self.channels:
             self.channels[channel] = [callback]
@@ -163,14 +163,14 @@ class BluetoothThread(threading.Thread):
         listenThread = threading.Thread(target = self.listen)
         listenThread.setName("ListenThread")
         listenThread.start()
-        
+
         # Calibrate the ev3...
         threading.Thread(target=self.calibrateEV3).start()
 
         # Get all updates  from the channels...
         for channel in self.channels:
             self.send(Message(channel = channel,  value = "update"))
-            
+
     def calibrateEV3(self):
         """Calibrate the ev3..."""
         time.sleep(1)

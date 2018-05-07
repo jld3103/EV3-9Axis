@@ -24,17 +24,17 @@ defaultColor = [0.39, 0.39, 0.39, 1.0]
 
 class ObjLoader(threading.Thread):
     """Read the obj file and render a 3D object"""
-    
+
     def __init__(self, filename, updateEvent):
         threading.Thread.__init__(self)
 
         self.filename = filename
         self.updateEvent = updateEvent
         self.changeYZ = False
-        
+
         # Set the color...
         self.color = defaultColor
-        
+
         # Define the coordinates...
         self.vertices = []
         self.triangle_faces = []
@@ -198,10 +198,10 @@ class Robot(QtOpenGL.QGLWidget):
 
     def __init__(self, parent, bluetooth):
         QtOpenGL.QGLWidget.__init__(self, parent)
-        
+
         self.parent = parent
         self.yRotDeg = 45
-        
+
         # Define all objects (The file names will be replace with an ObjLoader object)...
         self.objects = { "brick" : "brick.obj",
                                 "distanceSensorConnector" : "distance_sensor_connector.obj",

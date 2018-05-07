@@ -20,6 +20,8 @@ class CommandLine(QtGui.QTextEdit):
         self.bluetooth = bluetooth
         self.parent = parent
 
+        self.isWriting = False
+
         # Set font size...
         font = QtGui.QFont()
         font.setPointSize(12)
@@ -37,7 +39,12 @@ class CommandLine(QtGui.QTextEdit):
 
     def newMessage(self, message, sent = False):
         """Insert a message in the second line"""
-        
+
+        while self.isWriting:
+            time.sleep(0.01)
+
+        self.isWriting = True
+
         # If the message is received, check if received msgs should be shown...
         if not ( not sent and not self.parent.settings.get("showReceivedMsg", default = True)):
             # If the message is sende, check if sent msgs should be shown...
@@ -62,6 +69,8 @@ class CommandLine(QtGui.QTextEdit):
                     # Set the cursor to the end of the first line...
                     txtCursor.setPosition(len(firstLine))
                     self.setTextCursor(txtCursor)
+
+        self.isWriting = False
 
     def sendMessage(self, text):
         """Send the message to ev3"""

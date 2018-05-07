@@ -39,7 +39,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def __init__(self, version):
         QtGui.QMainWindow.__init__(self)
-        
+
         self.alive = True
 
         # Set the window title...
@@ -73,13 +73,13 @@ class MainWindow(QtGui.QMainWindow):
         mainMenu = self.menuBar()
         mainMenu.setGeometry(
             QtCore.QRect(0, 0, self.size().width(), self.menubarHeight))
-            
+
         # Create all main menu entries...
         bluetoothMenu = mainMenu.addMenu('&Bluetooth')
-        roomMenu = mainMenu.addMenu('&Room')    
+        roomMenu = mainMenu.addMenu('&Room')
         cmdMenu = mainMenu.addMenu('&Command line')
         ev3Menu = mainMenu.addMenu('&EV3')
-        
+
         # Create all actions of the main menu...
         self.connectionAction = QtGui.QAction("&Connect", self)
         self.showFloorSquareAction = QtGui.QAction("&%s floor squares" % ("Hide" if self.settings.get("showFloorSquare", default = True) else "Show"), self)
@@ -90,7 +90,7 @@ class MainWindow(QtGui.QMainWindow):
         self.calibrateFAction = QtGui.QAction("&Calibrate forward", self)
         self.calibrateRAction = QtGui.QAction("&Calibrate turn right", self)
         self.calibrateLAction = QtGui.QAction("&Calibrate turn left", self)
- 
+
         # Connect all actions of the main menu...
         self.connectionAction.triggered.connect(self.onConnection)
         self.showFloorSquareAction.triggered.connect(self.onShowFloorSquare)
@@ -101,7 +101,7 @@ class MainWindow(QtGui.QMainWindow):
         self.calibrateFAction.triggered.connect(self.onCalibrateF)
         self.calibrateRAction.triggered.connect(self.onCalibrateR)
         self.calibrateLAction.triggered.connect(self.onCalibrateL)
-        
+
         # Add all actions to the main menu entries...
         bluetoothMenu.addAction(self.connectionAction)
         roomMenu.addAction(self.showFloorSquareAction)
@@ -112,7 +112,7 @@ class MainWindow(QtGui.QMainWindow):
         ev3Menu.addAction(self.calibrateFAction)
         ev3Menu.addAction(self.calibrateLAction)
         ev3Menu.addAction(self.calibrateRAction)
-        
+
         # Add the status tips......
         self.connectionAction.setStatusTip('Connect to EV3')
 
@@ -167,7 +167,7 @@ class MainWindow(QtGui.QMainWindow):
         y2 = self.size().height() - self.menubarHeight * 2 - self.size().width() * 0.2 -2
         rect = QtCore.QRect(x, y, x2, y2)
         return rect
-        
+
     def onManageChannelFilter(self):
         """Show the filter dialog"""
         dialog = filterDialog.FilterDialog(self)
@@ -228,7 +228,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def onBluetoothEvent(self, message):
         """Handle the bluetooth events"""
-        
+
         # Inform the command line...
         self.commandLine.newMessage(message)
 
@@ -256,17 +256,17 @@ class MainWindow(QtGui.QMainWindow):
             QtGui.QMessageBox.information(None, "Bluetooth", "Disconnected...", QtGui.QMessageBox.Ok)
         elif value == "Failed to connect":
             QtGui.QMessageBox.information(None, "Bluetooth", "Failed to connect!", QtGui.QMessageBox.Ok)
-            
+
     def onCalibrateF(self):
         """Calibrate froward on the ev3"""
         dialog = calibrateDialog.CalibrateDialog(self, mode="Forward")
         dialog.show()
-        
+
     def onCalibrateR(self):
         """Calibrate right on the ev3"""
         dialog = calibrateDialog.CalibrateDialog(self, mode="Right")
         dialog.show()
-        
+
     def onCalibrateL(self):
         """Calibrate left on the ev3"""
         dialog = calibrateDialog.CalibrateDialog(self, mode="Left")
