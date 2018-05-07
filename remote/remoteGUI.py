@@ -15,7 +15,7 @@ import remote.robotWidget as robotWidget
 import remote.roomWidget as roomWidget
 
 # Import all dialogs...
-import remote.selectDeveiceDialog as selectDeveiceDialog
+import remote.selectDeviceDialog as selectDeviceDialog
 import remote.calibrateDialog as calibrateDialog
 import remote.filterDialog as filterDialog
 
@@ -24,8 +24,12 @@ from constants import *
 from logger import *
 from message import Message
 from settings import Settings
+import signal
 
 setLogLevel(logLevel)
+
+# Close the window when CTRL+C is pressed...
+signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -270,7 +274,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def handleSelectDevice(self, value):
         """Show a dialog for selecting a bluetooth device"""
-        dialog = selectDeveiceDialog.SelectDeviceDialog(self, value)
+        dialog = selectDeviceDialog.SelectDeviceDialog(self, value)
         dialog.show()
 
     def paintEvent(self, event):
