@@ -217,7 +217,7 @@ class MainWindow(QtGui.QMainWindow):
         if not self.bluetooth.connected and not self.bluetooth.isAlive():
             # Start the Thread for the bluetooth connection...
             info("Send connect signal")
-            self.bluetooth = communication.BluetoothThread(self, self.bluetoothEvent, self.bluetooth.channels)
+            self.bluetooth = communication.BluetoothThread(self, self.bluetoothEvent, channels = self.bluetooth.channels)
             self.bluetooth.setName("BluetoothThread")
             self.bluetooth.start()
 
