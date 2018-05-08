@@ -251,9 +251,13 @@ class MainWindow(QtGui.QMainWindow):
 
         # Show push up window...
         if value == "Connected":
-            QtGui.QMessageBox.information(None, "Bluetooth", "Connected...", QtGui.QMessageBox.Ok)
+            # Init the ev3...
+            self.bluetooth.calibrateEV3()
+            self.bluetooth.getAllUpdates()
+            # Show the connected dialog...
+            QtGui.QMessageBox.information(None, "Bluetooth", "Connected", QtGui.QMessageBox.Ok)
         elif value == "Disconnected":
-            QtGui.QMessageBox.information(None, "Bluetooth", "Disconnected...", QtGui.QMessageBox.Ok)
+            QtGui.QMessageBox.information(None, "Bluetooth", "Disconnected", QtGui.QMessageBox.Ok)
         elif value == "Failed to connect":
             QtGui.QMessageBox.information(None, "Bluetooth", "Failed to connect!", QtGui.QMessageBox.Ok)
 

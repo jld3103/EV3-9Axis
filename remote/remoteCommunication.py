@@ -7,7 +7,6 @@ from constants import *
 from logger import *
 from message import Message
 from utils import *
-import time
 
 s = None
 setLogLevel(logLevel)
@@ -37,7 +36,8 @@ class BluetoothThread(threading.Thread):
         try:
             self.connectByLastConnection()
         except Exception as e:
-            error("Failed to connect: %s" % e)
+            debug("Failed to connect (Debug message): %s" % str(e).strip())
+            error("Failed to connect")
             self.bluetoothEvent.emit(Message(channel = "connection", value = "Failed to connect"))
             info("Close bluetooth service")
             return
@@ -47,21 +47,9 @@ class BluetoothThread(threading.Thread):
 
         debug("Add new listener for the channel '%s': %s" % (channel, callback))
 
-        # Add a new listener in a new thread...
-        threading.Thread(target=self._addListener, args = (channel, callback)).start()
-
-    def _addListener(self, channel, callback): #TODO: Add the updater always after a connection...
-        """Wait for a connection and add the listener"""
-
         # Add the listener...
         if not channel in self.channels:
             self.channels[channel] = [callback]
-            # Wait for a connection...
-            while not self.connected and self.parent.alive:
-                time.sleep(0.5)
-            # Get all updates in this channel...
-          #  if self.connected:
-                #self.send(Message(channel = channel,  value = "update"))
         else:
             self.channels[channel].append(callback)
 
@@ -156,24 +144,21 @@ class BluetoothThread(threading.Thread):
         # Save new status...
         self.connected = True
 
-        # Inform the GUI...
-        self.bluetoothEvent.emit(Message(channel = "connection", value = "Connected"))
-
         # Listen for messages...
         listenThread = threading.Thread(target = self.listen)
         listenThread.setName("ListenThread")
         listenThread.start()
+        
+        # Inform the GUI...
+        self.bluetoothEvent.emit(Message(channel = "connection", value = "Connected"))
 
-        # Calibrate the ev3...
-       # threading.Thread(target=self.calibrateEV3).start()
-
-        # Get all updates  from the channels...
-#        for channel in self.channels:
-#            self.send(Message(channel = channel,  value = "update"))
+    def getAllUpdates(self):
+        """Get all updates in the listener channels"""
+        for channel in self.channels:
+            self.send(Message(channel = channel,  value = "update"))
 
     def calibrateEV3(self):
         """Calibrate the ev3..."""
-        time.sleep(1)
         self.send(Message(channel = "calibrateForward", value = "%d:%d:%d" % (self.parent.settings.get("calibrateForwardTime", default = 3000), self.parent.settings.get("calibrateForwardSpeedR", default = 255), self.parent.settings.get("calibrateForwardSpeedL", default = 255))))
         self.send(Message(channel = "calibrateRight", value = "%d:%d:%d" % (self.parent.settings.get("calibrateRightTime", default = 3000), self.parent.settings.get("calibrateRightSpeedR", default = 255), self.parent.settings.get("calibrateRightSpeedL", default = 255))))
         self.send(Message(channel = "calibrateLeft", value = "%d:%d:%d" % (self.parent.settings.get("calibrateLeftTime", default = 3000), self.parent.settings.get("calibrateLeftSpeedR", default = 255), self.parent.settings.get("calibrateLeftSpeedL", default = 255))))
