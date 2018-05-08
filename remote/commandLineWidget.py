@@ -20,6 +20,7 @@ class CommandLine(QtGui.QTextEdit):
         self.bluetooth = bluetooth
         self.parent = parent
 
+
         # Set font size...
         font = QtGui.QFont()
         font.setPointSize(12)
@@ -37,7 +38,7 @@ class CommandLine(QtGui.QTextEdit):
 
     def newMessage(self, message, sent = False):
         """Insert a message in the second line"""
-        
+
         # If the message is received, check if received msgs should be shown...
         if not ( not sent and not self.parent.settings.get("showReceivedMsg", default = True)):
             # If the message is sende, check if sent msgs should be shown...
@@ -60,8 +61,10 @@ class CommandLine(QtGui.QTextEdit):
                         self.insertHtml("<span>>>> </span><span style='color:red;'>%s: </span><span style='color:blue;'>%s</span><br>" % (message.channel, message.value))
 
                     # Set the cursor to the end of the first line...
+                    txtCursor = self.textCursor()
                     txtCursor.setPosition(len(firstLine))
                     self.setTextCursor(txtCursor)
+
 
     def sendMessage(self, text):
         """Send the message to ev3"""

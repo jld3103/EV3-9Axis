@@ -86,11 +86,11 @@ class Square():
 
         # Take the smaller side for the width and height of the squares...
         self.grid.scaledSquareSize = (min(squareWidth, squareHeight))
-        
+
         # If scaling is activated, scale the square size...
         if self.grid.scale:
             self.grid.squareSize = self.grid.scaledSquareSize
-        
+
         # Multiply the square size by the zoom factor...
         squareSizeZoomed = self.grid.squareSize * self.grid.zoom
 
@@ -115,7 +115,7 @@ class Square():
 
 class Grid():
     """This class manage the squares"""
-    
+
     def __init__(self, parent):
         # Define the grid with only one floor square...
         self.grid = [[Square(self)]]
@@ -131,7 +131,7 @@ class Grid():
         # Define the grid sizes...
         self.sizeX = 1
         self.sizeY = 1
-        
+
         # Define the current path...
         self.path = []
 
@@ -157,10 +157,10 @@ class Grid():
         self.closedSet = []
         self.path = []
         self.finding = True
-        
+
         # Add the start square to the possible squares...
         self.openSet.append(self.start)
-        
+
         # Reset the old algorithm data...
         for line in self.grid:
             for square in line:
@@ -179,11 +179,11 @@ class Grid():
                 if current == self.end:
                     info("Done!")
                     self.finding = False
-                
+
                 # Shift the current square in the close sets...
                 self.openSet.remove(current)
                 self.closedSet.append(current)
-                
+
                 # Get the neighbours of the current square...
                 currentNeighbours = current.getNeighbours()
 
@@ -268,12 +268,12 @@ class Grid():
             else:
                 commands.append(Message("turn", nextOrientation))
                 currentOrientation = nextOrientation
-                
+
         value = ""
-        
+
         for command in commands:
             value += command.channel + ":" + str(command.value) + "|"
-            
+
         command = Message(channel = "path", value = value[:-1])
 
         return command
@@ -436,7 +436,7 @@ class Grid():
         try:
             # Open the file...
             file = open(filename, "r")
-            
+
             # Read each line...
             for line in file:
                 coordinates = line.split(":")
@@ -450,7 +450,7 @@ class Grid():
     def save(self, filename):
         """Save the current grid in a text file"""
         file = open(filename, "w")
-        
+
         # Write a line for each wall (x:y)...
         for line in self.grid:
             for square in line:
