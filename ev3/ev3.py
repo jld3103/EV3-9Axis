@@ -38,6 +38,7 @@ class EV3:
         self.touchSensor = ev3.TouchSensor()
         self.infraredSensor = ev3.InfraredSensor()
         self.colorSensor = ev3.ColorSensor()
+        self.ultraSensor = ev3.UltrasonicSensor()
         #self.mpu9250 = MPU9250.MPU9250()
 
         # Init all motors...
@@ -55,6 +56,8 @@ class EV3:
         # Add bluetooth listener...
         self.bluetooth.addListener("touchSensor", self.sendTouchValue)
         self.bluetooth.addListener("infraredSensor", self.sendInfraredValue)
+        self.bluetooth.addListener("ultraSensor", self.sendUltraValue)
+        self.bluetooth.addListener("distanceSensor", self.sendDistanceValue)
         self.bluetooth.addListener("colorSensor", self.sendColorValue)
         self.bluetooth.addListener("screen", self.drawScreen)
         self.bluetooth.addListener("motorR", self.turnRight)
@@ -169,7 +172,12 @@ class EV3:
 
         while self.bluetooth.connected:
             # Get the value...
-            channel, value = function(value)
+            data = function(value)
+            if len(data) > 1:
+                channel, value = data
+            else:
+                channel = data[0]
+                value = None
 
             # If the value is not the same like the last time, send the value to the remote...
             if value != oldValue:
@@ -296,6 +304,23 @@ class EV3:
             return ("infraredSensor",  value)
         except:
             return ("infraredSensor",  "Device not connected")
+
+    def sendUltraValue(self, *args):
+        """Send the value of the ultra sensor"""
+        try:
+            value = self.ultraSensor.value()
+            return ("ultraSensor",  value)
+        except:
+            return ("ultraSensor",  "Device not connected")
+
+    def sendDistanceValue(self, *args):
+        """Send the value of the ultra or infrared sensor"""
+        data = self.sendUltraValue()
+        if data[1] == "Device not connected":
+            data = self.sendInfraredSensor()
+            if data[1] == "Device not connected":
+                return ("distanceSensor", data[1])
+        return ("distanceSensor", data[1])
 
     def sendTouchValue(self, *args):
         """Send the value of the touch sensor"""
