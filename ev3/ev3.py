@@ -215,7 +215,7 @@ class EV3:
                 return ("screen",  "Value has wrong format (x|y:x|y:...)")
             self.screen.draw.point((x, y))
         self.screen.update()
-        return ("screen",  value)
+        return ("screen",  "Success")
 
     def forward(self, *args):
         """Move forward"""
