@@ -300,7 +300,7 @@ class EV3:
     def sendInfraredValue(self, *args):
         """Send the value of the infrared sensor"""
         try:
-            value = self.infraredSensor.value()
+            value = int(self.infraredSensor.value() * 25.5)
             return ("infraredSensor",  value)
         except:
             return ("infraredSensor",  "Device not connected")
@@ -317,7 +317,7 @@ class EV3:
         """Send the value of the ultra or infrared sensor"""
         data = self.sendUltraValue()
         if data[1] == "Device not connected":
-            data = self.sendInfraredSensor()
+            data = self.sendInfraredValue()
             if data[1] == "Device not connected":
                 return ("distanceSensor", data[1])
         return ("distanceSensor", data[1])
