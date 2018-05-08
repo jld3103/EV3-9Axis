@@ -60,8 +60,8 @@ class BluetoothThread(threading.Thread):
             while not self.connected and self.parent.alive:
                 time.sleep(0.5)
             # Get all updates in this channel...
-            if self.connected:
-                self.send(Message(channel = channel,  value = "update"))
+          #  if self.connected:
+                #self.send(Message(channel = channel,  value = "update"))
         else:
             self.channels[channel].append(callback)
 
@@ -165,11 +165,11 @@ class BluetoothThread(threading.Thread):
         listenThread.start()
 
         # Calibrate the ev3...
-        threading.Thread(target=self.calibrateEV3).start()
+       # threading.Thread(target=self.calibrateEV3).start()
 
         # Get all updates  from the channels...
-        for channel in self.channels:
-            self.send(Message(channel = channel,  value = "update"))
+#        for channel in self.channels:
+#            self.send(Message(channel = channel,  value = "update"))
 
     def calibrateEV3(self):
         """Calibrate the ev3..."""

@@ -225,7 +225,7 @@ class Robot(QtOpenGL.QGLWidget):
         # Add all listener...
         bluetooth.addListener("touchSensor", self.setTouchSensor)
         bluetooth.addListener("colorSensor", self.setColorSensor)
-        bluetooth.addListener("infraredSensor", self.setDistanceSensor)
+        bluetooth.addListener("distanceSensor", self.setDistanceSensor)
 
         self.oldMousePosition = 0
 
@@ -266,7 +266,10 @@ class Robot(QtOpenGL.QGLWidget):
         value = int(value)
 
         # Set the max value of the sensor...
-        maxValue = 100
+        if value == 2550:
+            value = 1
+            
+        maxValue = 2549
 
         # Calculate the color steps for each value...
         steps = 510 / maxValue
