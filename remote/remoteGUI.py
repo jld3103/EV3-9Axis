@@ -44,7 +44,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # Set the window title...
         self.setWindowTitle("EV3 Navigator - v%s" % (version))
-        self.setWindowIcon(QtGui.QIcon('remote/textures/icon.png'))
+        self.setWindowIcon(QtGui.QIcon(windowIcon))
 
         # Set window size...
         self.resize(630, 420)

@@ -10,3 +10,4 @@ port = 3
 logLevel = INFO
 alive = True
 gridFile = "remote/grid.txt"
+windowIcon = "remote/textures/icon.png"
