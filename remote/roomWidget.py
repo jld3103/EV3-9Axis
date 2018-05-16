@@ -80,8 +80,8 @@ class Square():
         rect = self.rect()
         x = rect.x()
         y = rect.y()
-        xCenter = x + (x2 - x) / 2
-        yCenter = y + (y2 - y) / 2
+        xCenter = x + (x + rect.width() - x) / 2
+        yCenter = y + (y + rect.height() - y) / 2
         
         # Set the pen...
         pen = QtGui.QPen(QtGui.QColor(255,0,0))                      # set lineColor
