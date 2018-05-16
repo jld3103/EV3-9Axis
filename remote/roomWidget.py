@@ -72,6 +72,37 @@ class Square():
     def draw(self, painter, color):
         """Draw yourself"""
         painter.fillRect(self.rect(), QtGui.QColor(color[0], color[1], color[2]))
+        
+    def drawOrientation(self, painter, orientation):
+        """Draw an arrow to the current orientation"""
+        
+        # Get the square coorinates...
+        rect = self.rect()
+        x = rect.x()
+        y = rect.y()
+        xCenter = x + (x2 - x) / 2
+        yCenter = y + (y2 - y) / 2
+        
+        # Set the pen...
+        pen = QtGui.QPen(QtGui.QColor(255,0,0))                      # set lineColor
+        pen.setWidth(3) 
+        brush = QtGui.QBrush(QtGui.QColor(255,0,0))  
+        painter.setPen(pen)
+        painter.setBrush(brush)  
+        
+        # Create triangle for the current orientation...
+        if orientation == 0:
+            triangle = QtGui.QPolygon([x + rect.width() / 4, y + rect.height() / 4, xCenter, y, x + rect.width() * 3/4, y + rect.height() / 4])
+        elif orientation == 1:
+            triangle = QtGui.QPolygon([x + rect.width() * 3/4, y + rect.height() / 4, x + rect.width(), yCenter, x + rect.width() * 3/4, y + rect.height() * 3/4])
+        elif orientation == 2:
+            triangle = QtGui.QPolygon([x + rect.width() / 4, y + rect.height() * 3/4, xCenter, y + rect.height(), x + rect.width() * 3/4, y + rect.height() * 3/4])
+        else:
+            triangle = QtGui.QPolygon([x + rect.width() / 4, y + rect.height() / 4, x, yCenter, x + rect.width()  / 4, y + rect.height() * 3/4])
+        
+        # Draw triangle...
+        painter.drawPolygon(triangle)
+        
 
     def rect(self):
         """Calculate the rect of the square"""
@@ -222,7 +253,7 @@ class Grid():
                 info("No solution!")
                 QtGui.QMessageBox.warning(None, "A*", "No solution!", "Ok")
                 return
-        self.parent.bluetooth.send(Message("current", str(self.current.x()) + ":" + str(self.current.y())))
+        self.parent.bluetooth.send(Message("current", "%d:%d:%d" % (self.current.x(),  self.current.y(), self.currentOrientation)))
 
         # Send the commands for the path to the ev3...
         self.parent.bluetooth.send(self.getPathCommand(self.path))
@@ -362,6 +393,11 @@ class Grid():
         if x > self.sizeX - 1 or x < 0 or y > self.sizeY - 1 or y < 0:
             # Add square if not existing
             self.addSquare(x, y, None)
+            if x < 0:
+                x = 0
+            if y < 0:
+                y = 0
+            
         return self.grid[y][x]
 
     def getSquareAtCoordinate(self, x, y):
@@ -408,6 +444,7 @@ class Grid():
             for square in line:
                 if square == self.current:
                     square.draw(painter, (255, 255, 0))
+                    square.drawOrientation(painter, self.currentOrientation)
                 elif square.state:
                     square.draw(painter, (250, 250, 250))
                 elif square in self.path:
@@ -424,7 +461,6 @@ class Grid():
 
                 x += 1
             y += 1
-
 
         # End painter and update the image...
         painter.end()
@@ -485,6 +521,23 @@ class RoomWidget(QtGui.QWidget):
 
         # Load the old grid
         self.grid.load(gridFile)
+        
+        # Add listener...
+        self.bluetooth.addListener("current", self.setCurrent, updating=False)
+        
+    def setCurrent(self, value):
+        """Set the current position"""
+                
+        values = value.split(":")
+        
+        # Set the current square...
+        self.grid.current = self.grid.getSquare(int(values[0]), int(values[1]))
+        
+        # Set the current orientation...
+        self.grid.currentOrientation = int(values[2])
+        
+        # Draw the square...
+        self.grid.draw(self.image)
 
     def contextMenu(self, pos):
         """show the context menu"""
