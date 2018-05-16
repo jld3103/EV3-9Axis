@@ -265,11 +265,7 @@ class Robot(QtOpenGL.QGLWidget):
         # Convert value in an interger...
         value = int(value)
 
-        # Set the max value of the sensor...
-        if value == 2550:
-            value = 1
-            
-        maxValue = 2549
+        maxValue = 2550
 
         # Calculate the color steps for each value...
         steps = 510 / maxValue
@@ -278,7 +274,7 @@ class Robot(QtOpenGL.QGLWidget):
         colorG = min((value * steps) / 255, 1.0)
         colorR = 1
         if colorG == 1:
-            colorR = (255 - (value -50) * steps) / 255
+            colorR = 1 + ((255 - (value -50) * steps) / 255)
 
         # Set the color...
         self.objects["distanceSensor"].setColor(colorR, colorG, 0)
