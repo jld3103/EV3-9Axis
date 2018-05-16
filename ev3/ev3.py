@@ -19,7 +19,7 @@ class EV3:
         self.screen = ev3.Screen()
 
         self.orientation = 0 # Top: 0 / Right: 1 / Bottom: 2 / Left: 3
-        self.current = "0:0"
+        self.current = (0, 0)
 
         # Calibration data
         self.cFT = 3000 # cFT = CalibrateForwardTime
@@ -78,9 +78,9 @@ class EV3:
             self._1Forward()
         else:
             data = data.split(":")
-            self.cFT = data[0]
-            self.cFL = data[0]
-            self.cFR = data[0]
+            self.cFT = int(data[0])
+            self.cFL = int(data[1])
+            self.cFR = int(data[2])
         return ("calibrateForward", "Success")
 
     def calibrateLeft(self, data):
@@ -89,9 +89,9 @@ class EV3:
             self._90Left()
         else:
             data = data.split(":")
-            self.cLT = data[0]
-            self.cLL = data[0]
-            self.cLR = data[0]
+            self.cLT = int(data[0])
+            self.cLL = int(data[1])
+            self.cLR = int(data[2])
         return ("calibrateLeft", "Success")
 
     def calibrateRight(self, data):
@@ -100,34 +100,61 @@ class EV3:
             self._90Right()
         else:
             data = data.split(":")
-            self.cRT = data[0]
-            self.cRL = data[0]
-            self.cRR = data[0]
+            self.cRT = int(data[0])
+            self.cRL = int(data[1])
+            self.cRR = int(data[2])
         return ("calibrateRight", "Success")
 
     def _1Forward(self):
         """Drive one square forward"""
         info("1 forward")
+        
+        # Run the motors...
+        self.motorR.run_timed(time_sp = self.cFT, speed_sp = self.cFR)
+        self.motorL.run_timed(time_sp = self.cFT, speed_sp = self.cFL)
+        
+        # Wait until the motors stop...
+        while self.motorR.is_running or self.motorL.is_running:
+            time.sleep(0.1)
+            
 
     def _90Left(self):
         """Turn 90° left"""
         info("90 left")
+        
+        # Run the motors...
+        self.motorR.run_timed(time_sp = self.cLT, speed_sp = -self.cLR)
+        self.motorL.run_timed(time_sp = self.cLT, speed_sp = self.cLL)
+        
+        # Wait until the motors stop...
+        while self.motorR.is_running or self.motorL.is_running:
+            time.sleep(0.1)
 
     def _90Right(self):
         """Turn 90° right"""
         info("90 right")
+        
+        # Run the motors...
+        self.motorR.run_timed(time_sp = self.cRT, speed_sp = self.cRR)
+        self.motorL.run_timed(time_sp = self.cRT, speed_sp = -self.cRL)
+        
+        # Wait until the motors stop...
+        while self.motorR.is_running or self.motorL.is_running:
+            time.sleep(0.1)
 
-    def setCurrent(self, *args):
+    def setCurrent(self, value):
         """Set the current square"""
-        self.current = "".join(args)
+        values = value.split(":")
+        self.current = (int(values[0]), int(values[1]))
+        self.orientation = int(values[2])
+        return ("current", value)
 
-    def path(self, *args):
+    def path(self, value):
         """Listen to the path commands"""
-        value = "".join(args)
 
         commands = value.split("|")
 
-        # Listen until the server close...
+        # Execute all command for this path...
         for command in commands:
             channel = command.split(":")[0]
             value = command.split(":")[1]
@@ -136,8 +163,8 @@ class EV3:
             if channel == "forward":
                 for i in range(int(value)):
                     self._1Forward()
-                    x = int(self.current.split(":")[0])
-                    y = int(self.current.split(":")[1])
+                    x = int(self.current[0])
+                    y = int(self.current[1])
                     o = self.orientation
                     if o == 0:
                         y -= 1
@@ -147,17 +174,23 @@ class EV3:
                         y += 1
                     elif o == 3:
                         x -= 1
-                    self.current = str(x) + ":" + str(y)
+                    self.current = (x, y)
+                    self.bluetooth.send(Message(channel = "current",  value = "%d:%d:%d" % (self.current[0], self.current[1], self.orientation)))
             # If the channel is 'turn', turn the robot to position...
             elif channel == "turn":
                 value = int(value)
                 if self.orientation < value:
                     for i in range(value - self.orientation):
                         self._90Right()
+                        self.orientation += 1
+                        self.bluetooth.send(Message(channel = "current",  value = "%d:%d:%d" % (self.current[0], self.current[1], self.orientation)))
                 else:
                     for i in range(self.orientation - value):
                         self._90Left()
+                        self.orientation -= 1
+                        self.bluetooth.send(Message(channel = "current",  value = "%d:%d:%d" % (self.current[0], self.current[1], self.orientation)))
                 self.orientation = value
+                
 
         return ("path", "Success")
 
@@ -191,7 +224,7 @@ class EV3:
             # Wait for 0.1 seconds (TODO: Set interval from the remote)
             time.sleep(0.1)
 
-    def close(self, *args):
+    def close(self, value):
         """Close the bluetooth server"""
 
         # Close the bluetooth server...
@@ -203,9 +236,8 @@ class EV3:
 
         return ("close", "Closed server")
 
-    def drawScreen(self, *args):
+    def drawScreen(self, value):
         """Draw point on the screen"""
-        value = "".join(args)
         points = value.split(":")
         for point in points:
             try:
@@ -217,9 +249,8 @@ class EV3:
         self.screen.update()
         return ("screen",  "Success")
 
-    def forward(self, *args):
+    def forward(self, value):
         """Move forward"""
-        value = "".join(args)
         # Get time and speed...
         fragments = value.split(":")
         time = int(fragments[0].strip())
@@ -233,9 +264,8 @@ class EV3:
         except:
             return ("motorRL",  "Device not connected")
 
-    def rotate(self, *args):
+    def rotate(self, value):
         """Rotate around itself"""
-        value = "".join(args)
         # Get time and speed...
         fragments = value.split(":")
         time = int(fragments[0].strip())
@@ -249,9 +279,8 @@ class EV3:
         except:
             return ("motorRL",  "Device not connected")
 
-    def turnRight(self, *args):
+    def turnRight(self, value):
         """Turn the right motor"""
-        value = "".join(args)
         # Get time and speed...
         fragments = value.split(":")
         time = int(fragments[0].strip())
@@ -264,9 +293,8 @@ class EV3:
         except:
             return ("motorR",  "Device not connected")
 
-    def turnLeft(self, *args):
+    def turnLeft(self, value):
         """Turn the left motor"""
-        value = "".join(args)
         # Get time and speed...
         fragments = value.split(":")
         time = int(fragments[0].strip())
@@ -279,9 +307,8 @@ class EV3:
         except:
             return ("motorL", "Device not connected")
 
-    def sendColorValue(self, *args):
+    def sendColorValue(self, value):
         """Send the value of the color sensor"""
-        value = "".join(args)
         if value == "color":
             try:
                 color = self.colorSensor.COLORS[self.colorSensor.color]
@@ -297,7 +324,7 @@ class EV3:
             except:
                 return ("colorSensor", "Device not connected")
 
-    def sendInfraredValue(self, *args):
+    def sendInfraredValue(self, value):
         """Send the value of the infrared sensor"""
         try:
             value = int(self.infraredSensor.value() * 25.5)
@@ -305,7 +332,7 @@ class EV3:
         except:
             return ("infraredSensor",  "Device not connected")
 
-    def sendUltraValue(self, *args):
+    def sendUltraValue(self, value):
         """Send the value of the ultra sensor"""
         try:
             value = self.ultraSensor.value()
@@ -313,16 +340,16 @@ class EV3:
         except:
             return ("ultraSensor",  "Device not connected")
 
-    def sendDistanceValue(self, *args):
+    def sendDistanceValue(self, value):
         """Send the value of the ultra or infrared sensor"""
-        data = self.sendUltraValue()
+        data = self.sendUltraValue(None)
         if data[1] == "Device not connected":
-            data = self.sendInfraredValue()
+            data = self.sendInfraredValue(None)
             if data[1] == "Device not connected":
                 return ("distanceSensor", data[1])
         return ("distanceSensor", data[1])
 
-    def sendTouchValue(self, *args):
+    def sendTouchValue(self, value):
         """Send the value of the touch sensor"""
         try:
             value = self.touchSensor.value()
@@ -335,12 +362,12 @@ class EV3:
         accel = mpu9250.readAccel()
         return ("accel", "%f:%f:%f" % (accel["x"], accel["y"], accel["z"]))
 
-    def sendGyroData(self, *args):
+    def sendGyroData(self, value):
         """Send the values of the gyroscope"""
         gyro = mpu9250.readGyro()
         return ("gyro", "%f:%f:%f" % (gyro["x"], gyro["y"], gyro["z"]))
 
-    def sendMagData(self, *args):
+    def sendMagData(self, value):
         """Send the values of the magnetometer"""
         mag = mpu9250.readMagnet()
         return ("mag", "%f:%f:%f" % (mag["x"], mag["y"], mag["z"]))
