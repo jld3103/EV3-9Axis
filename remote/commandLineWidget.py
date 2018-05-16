@@ -106,7 +106,11 @@ class CommandLine(QtGui.QTextEdit):
                 firstLine = self.toPlainText().split("\n")[0].strip()
                 if len(firstLine) > 4:
                     # Send the message...
-                    self.sendMessage(firstLine[3:])
+                    if firstLine[4:] != "clear":
+                        self.sendMessage(firstLine[3:])
+                    else:
+                        # Clear the command line...
+                        self.clear()
                     # Insert a new line...
                     self.moveCursor(QtGui.QTextCursor.Start, 0)
                     self.insertHtml("<br>")
