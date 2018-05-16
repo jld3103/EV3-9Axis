@@ -25,6 +25,7 @@ class BluetoothThread(threading.Thread):
 
         # Define all channels...
         self.channels = channels
+        self.noUpdateChannels = []
 
         self.macAddress = macAddress
 
@@ -42,10 +43,13 @@ class BluetoothThread(threading.Thread):
             info("Close bluetooth service")
             return
 
-    def addListener(self, channel, callback):
+    def addListener(self, channel, callback, updating=True):
         """Add a listener for a channel"""
 
         debug("Add new listener for the channel '%s': %s" % (channel, callback))
+        
+        if not updating:
+            self.noUpdateChannels.append(channel)
 
         # Add the listener...
         if not channel in self.channels:
@@ -155,7 +159,8 @@ class BluetoothThread(threading.Thread):
     def getAllUpdates(self):
         """Get all updates in the listener channels"""
         for channel in self.channels:
-            self.send(Message(channel = channel,  value = "update"))
+            if not channel in self.noUpdateChannels:
+                self.send(Message(channel = channel,  value = "update"))
 
     def calibrateEV3(self):
         """Calibrate the ev3..."""
