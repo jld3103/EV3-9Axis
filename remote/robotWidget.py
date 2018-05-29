@@ -200,7 +200,9 @@ class Robot(QtOpenGL.QGLWidget):
         QtOpenGL.QGLWidget.__init__(self, parent)
 
         self.parent = parent
-        self.yRotDeg = 45
+        self.xRotDeg = 0
+        self.yRotDeg = 0
+        self.zRotDeg = 0
 
         # Define all objects (The file names will be replace with an ObjLoader object)...
         self.objects = { "brick" : "brick.obj",
@@ -226,8 +228,75 @@ class Robot(QtOpenGL.QGLWidget):
         bluetooth.addListener("touchSensor", self.setTouchSensor)
         bluetooth.addListener("colorSensor", self.setColorSensor)
         bluetooth.addListener("distanceSensor", self.setDistanceSensor)
+        bluetooth.addListener("accel", self.setAccel)
+        bluetooth.addListener("mag", self.setMag)
+        
+        self.max = 0
+        self.min = 0
 
         self.oldMousePosition = 0
+        
+    def dist(self, a,b):
+        return math.sqrt((a*a)+(b*b))
+            
+    def get_y_rotation(self, x,y,z):
+        radians = math.atan2(x, self.dist(y,z))
+        return -math.degrees(radians)
+         
+    def get_x_rotation(self, x,y,z):
+        radians = math.atan2(y, self.dist(x,z))
+        return math.degrees(radians)
+        
+    def setAccel(self, value):
+        """Set the rotation of the robot"""
+        
+        axis = value.split(":")
+        
+        try:
+            accel_xout = float(axis[0])
+            accel_yout = float(axis[1])
+            accel_zout = float(axis[2])
+        except:
+            return
+        
+        accel_xout_scaled = accel_xout / 16384.0
+        accel_yout_scaled = accel_yout / 16384.0
+        accel_zout_scaled = accel_zout / 16384.0
+
+        self.xRotDeg =  self.get_x_rotation(accel_xout_scaled, accel_yout_scaled, accel_zout_scaled)
+        self.yRotDeg =  self.get_y_rotation(accel_xout_scaled, accel_yout_scaled, accel_zout_scaled)
+        self.updateGL()
+        
+    def setMag(self, value):
+        axis = value.split(":")
+        
+        try:
+            mag_xout = (float(axis[0]) - 16.38) * 0.02453
+            mag_yout = (float(axis[1]) -16.38) * 0.02453
+            #mag_zout = float(axis[2])
+        except:
+            return
+            
+        if self.min == 0:
+            self.min = min(mag_xout, mag_yout)
+            
+        self.min = min(self.min, min(mag_xout, mag_yout))
+        self.max = max(self.max, max(mag_xout, mag_yout))
+            
+        xGaussData = mag_xout * 0.48828125
+        yGaussData = mag_yout * 0.48828125
+        
+        d = math.atan(yGaussData/xGaussData) * (180/math.pi)
+            
+        if d > 360:
+            d -= 360
+            
+        elif d < 0:
+            d += 360
+        
+        info("%f %f %f" % (d, self.min, self.max))
+            
+        self.zRotDeg = d
 
     def setTouchSensor(self, value):
         """Set touch sensor value"""
@@ -328,7 +397,9 @@ class Robot(QtOpenGL.QGLWidget):
         glTranslate(0, -8, -29)
 
         # Rotate the object...
-        glRotate(self.yRotDeg, 0, -10, 00)
+        glRotate(self.xRotDeg, 1, 0, 0)
+        glRotate(self.yRotDeg, 0, 0, 1)
+#        glRotate(self.zRotDeg, 0, 1, 0)
 
         # Render each object...
         for object in self.objects:
@@ -361,5 +432,5 @@ class Robot(QtOpenGL.QGLWidget):
 
     def mouseMoveEvent(self, event):
         """Spin the robot"""
-        self.spin((event.x() - self.oldMousePosition) / 4)
+        #self.spin((event.x() - self.oldMousePosition) / 4)
         self.oldMousePosition = event.x()
