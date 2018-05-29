@@ -93,15 +93,15 @@ class BluetoothThread(threading.Thread):
 
     def closeServer(self):
         """Close the server"""
-
-        info("Close bluetooth server")
-
-        # Close bluetooth server...
-        s.close()
-
+        
         # Set status to disconnected...
         self.connected = False
         self.isRunning = False
+
+        # Close bluetooth server...
+        s.close()
+        
+        info("Close bluetooth server")
 
     def send(self, message):
         """Send data to bluetooth device"""
@@ -163,7 +163,7 @@ class BluetoothThread(threading.Thread):
                         # Check if the channel is in channels...
                         if channel in self.channels:
                             for i in range(len(self.channels[channel])):
-                                listener = threading.Thread(target = self.receivedData, args = (self.channels[channel][i], value))
+                                listener = threading.Thread(target = self.receivedData, args = (self.channels[channel][i], value), name = channel)
                                 listener.start()
                     elif len(fragments) == 1:
                         self.closeServer()
