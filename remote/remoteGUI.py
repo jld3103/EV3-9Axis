@@ -90,6 +90,7 @@ class MainWindow(QtGui.QMainWindow):
         self.calibrateFAction = QtGui.QAction("&Calibrate forward", self)
         self.calibrateRAction = QtGui.QAction("&Calibrate turn right", self)
         self.calibrateLAction = QtGui.QAction("&Calibrate turn left", self)
+        self.calibrateDAction = QtGui.QAction("&Calibrate distance sensor", self)
 
         # Connect all actions of the main menu...
         self.connectionAction.triggered.connect(self.onConnection)
@@ -101,6 +102,7 @@ class MainWindow(QtGui.QMainWindow):
         self.calibrateFAction.triggered.connect(self.onCalibrateF)
         self.calibrateRAction.triggered.connect(self.onCalibrateR)
         self.calibrateLAction.triggered.connect(self.onCalibrateL)
+        self.calibrateDAction.triggered.connect(self.onCalibrateD)
 
         # Add all actions to the main menu entries...
         bluetoothMenu.addAction(self.connectionAction)
@@ -112,6 +114,7 @@ class MainWindow(QtGui.QMainWindow):
         ev3Menu.addAction(self.calibrateFAction)
         ev3Menu.addAction(self.calibrateLAction)
         ev3Menu.addAction(self.calibrateRAction)
+        ev3Menu.addAction(self.calibrateDAction)
 
         # Add the status tips......
         self.connectionAction.setStatusTip('Connect to EV3')
@@ -274,6 +277,11 @@ class MainWindow(QtGui.QMainWindow):
     def onCalibrateL(self):
         """Calibrate left on the ev3"""
         dialog = calibrateDialog.CalibrateDialog(self, mode="Left")
+        dialog.show()
+        
+    def onCalibrateD(self):
+        """Calibrate distance sensor"""
+        dialog = calibrateDialog.CalibrateDialog(self, mode="Distance")
         dialog.show()
 
     def handleSelectDevice(self, value):
