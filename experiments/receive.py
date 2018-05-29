@@ -1,3 +1,6 @@
+# This experiment read the sensor data from the arduino
+# Author: Finn G., Jan-Luca D.
+
 #!/usr/bin/python3
 from smbus import SMBus
 import sys
