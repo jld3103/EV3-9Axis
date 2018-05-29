@@ -165,6 +165,7 @@ class Grid():
 
         # Define the current path...
         self.path = []
+        self.countTries = 0
 
         # Define parent...
         self.parent = parent
@@ -248,12 +249,20 @@ class Grid():
                     t = t.previous
             else:
                 self.finding = False
+                if self.countTries == 0:
+                    self.getSquare(-1, -1)
+                    self.getSquare(self.sizeX, self.sizeY)
+                    self.countTries += 1
+                    self.findOnesWay(self.end)
+                    return
                 # Draw the path...
                 self.draw(self.parent.image)
                 info("No solution!")
                 QtGui.QMessageBox.warning(None, "A*", "No solution!", "Ok")
                 return
         self.parent.bluetooth.send(Message("current", "%d:%d:%d" % (self.current.x(),  self.current.y(), self.currentOrientation)))
+        
+        self.countTries = 0
 
         # Send the commands for the path to the ev3...
         self.parent.bluetooth.send(self.getPathCommand(self.path))
@@ -524,6 +533,21 @@ class RoomWidget(QtGui.QWidget):
         
         # Add listener...
         self.bluetooth.addListener("current", self.setCurrent, updating=False)
+        self.bluetooth.addListener("path", self.pathFeedback, updating=False)
+        self.bluetooth.addListener("wall", self.setWall, updating=False)
+        
+    def pathFeedback(self, value):
+        """Get the path feedback and calcutates the path new"""
+        if value == "failed":
+            self.grid.findOnesWay(self.grid.end)
+        elif value == "error":
+            QtGui.QMessageBox.warning(None, "EV3", "Cannot execute path!", "Ok")
+        
+    def setWall(self, value):
+        """Set a wall in the grid"""
+        x, y = value.split(":")
+        square = self.grid.getSquare(int(x), int(y))
+        square.updateState(True)
         
     def setCurrent(self, value):
         """Set the current position"""
