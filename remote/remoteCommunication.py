@@ -226,7 +226,7 @@ class BluetoothThread(threading.Thread):
         try:
             s.close()
         except Exception as e:
-            error("Faild to disconnect: %s" % e)
+            error("Failed to disconnect: %s" % e)
 
         info("Close bluetooth service")
 
@@ -250,7 +250,7 @@ class BluetoothThread(threading.Thread):
         try:
             # Send the message...
             s.send(text)
-        except OSError as e:
+        except Exception as e:
             debug("Failed to send (DEBUG): %s" % e)
             error("Failed to send")
 
