@@ -152,11 +152,9 @@ class EV3:
         obstacle = False
         # Wait until the motors stop...
         while self.motorR.is_running or self.motorL.is_running:
-            try:
-                tsValue = self.touchSensor.value()
-            except:
+            tsValue = self.sendTouchValue(None)[1]
+            if tsValue == "Device not connected":
                 time.sleep(0.1)
-                self.touchSensor = ev3.TouchSensor()
                 continue
             if tsValue:
                 # Stop turning...
@@ -216,7 +214,7 @@ class EV3:
         """Check if the next square is a wall"""
         distance = self.sendDistanceValue(None)[1]
         if distance != "Device not connected":
-            if self.sendDistanceValue(None)[1] <= self.cWD:
+            if distance <= self.cWD:
                 info("There is a wall")
                 return True
         else:
@@ -273,7 +271,17 @@ class EV3:
             # If the channel is 'turn', turn the robot to position...
             elif channel == "turn":
                 value = int(value)
-                if self.orientation < value:
+                if  self.orientation == 3 and value == 0:
+                    if not self._90Right():
+                        return ("path", "error")
+                    self.orientation = 0
+                    self.bluetooth.send(Message(channel = "current",  value = "%d:%d:%d" % (self.current[0], self.current[1], self.orientation)))
+                if  self.orientation == 0 and value == 3:
+                    if not self._90Left():
+                        return ("path", "error")
+                    self.orientation = 3
+                    self.bluetooth.send(Message(channel = "current",  value = "%d:%d:%d" % (self.current[0], self.current[1], self.orientation)))
+                elif self.orientation < value:
                     for i in range(value - self.orientation):
                         if not self._90Right():
                             return ("path", "error")
@@ -380,6 +388,8 @@ class EV3:
                 color = self.colorSensor.COLORS[self.colorSensor.color]
                 return ("colorSensor", color)
             except:
+                # Try to reconnect...
+                self.colorSensor = ev3.ColorSensor()
                 return ("colorSensor", "Device not connected")
         else:
             try:
@@ -388,6 +398,8 @@ class EV3:
                 blue = self.colorSensor.blue
                 return ("colorSensor", "%d:%d:%d" % (red, green, blue))
             except:
+                # Try to reconnect...
+                self.colorSensor = ev3.ColorSensor()
                 return ("colorSensor", "Device not connected")
 
     def sendInfraredValue(self, value):
@@ -396,6 +408,8 @@ class EV3:
             value = int(self.infraredSensor.value() * 25.5)
             return ("infraredSensor",  value)
         except:
+            # Try to reconnect...
+            self.infraredSensor = ev3.InfraredSensor()
             return ("infraredSensor",  "Device not connected")
 
     def sendUltraValue(self, value):
@@ -404,6 +418,8 @@ class EV3:
             value = self.ultraSensor.value()
             return ("ultraSensor",  value)
         except:
+            # Try to reconnect...
+            self.ultraSensor = ev3.UltrasonicSensor()
             return ("ultraSensor",  "Device not connected")
 
     def sendDistanceValue(self, value):
@@ -421,6 +437,8 @@ class EV3:
             value = self.touchSensor.value()
             return ("touchSensor",  value)
         except:
+            # Try to reconnect...
+            self.touchSensor = ev3.TouchSensor()
             return ("touchSensor",  "Device not connected")
 
     def sendAccelData(self, value):
