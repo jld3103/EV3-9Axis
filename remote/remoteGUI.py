@@ -220,7 +220,7 @@ class MainWindow(QtGui.QMainWindow):
         if not self.bluetooth.connected and not self.bluetooth.isAlive():
             # Start the Thread for the bluetooth connection...
             info("Send connect signal")
-            self.bluetooth = communication.BluetoothThread(self, self.bluetoothEvent, channels = self.bluetooth.channels)
+            self.bluetooth = communication.BluetoothThread(self, self.bluetoothEvent, bluetoothData = self.bluetooth.bluetoothData)
             self.bluetooth.setName("BluetoothThread")
             self.bluetooth.start()
 
@@ -236,8 +236,8 @@ class MainWindow(QtGui.QMainWindow):
         self.commandLine.newMessage(message)
 
         # Execute the function for this channel...
-        if message.channel in self.bluetooth.channels and not message.value == "Device not connected":
-            for function in self.bluetooth.channels[message.channel]:
+        if message.channel in self.bluetooth.bluetoothData.channels and not message.value == "Device not connected":
+            for function in self.bluetooth.bluetoothData.channels[message.channel]:
                 function(message.value)
 
     def handleConnection(self, value):

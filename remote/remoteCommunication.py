@@ -11,11 +11,17 @@ from utils import *
 s = None
 setLogLevel(logLevel)
 
+class BluetoothData():
+    """Save the bluetooth data until the programm close"""
+    def __init__(self, channels = {}, noUpdateChannels = []):
+        self.channels = channels
+        self.noUpdateChannels = noUpdateChannels
+
 
 class BluetoothThread(threading.Thread):
     """Control the bluetooth connection"""
 
-    def __init__(self, parent, bluetoothEvent, macAddress = None, channels = {}):
+    def __init__(self, parent, bluetoothEvent, macAddress = None, bluetoothData = BluetoothData()):
         threading.Thread.__init__(self)
 
         self.bluetoothEvent = bluetoothEvent
@@ -24,8 +30,7 @@ class BluetoothThread(threading.Thread):
         self.connected = False
 
         # Define all channels...
-        self.channels = channels
-        self.noUpdateChannels = []
+        self.bluetoothData = bluetoothData
 
         self.macAddress = macAddress
 
@@ -49,13 +54,13 @@ class BluetoothThread(threading.Thread):
         debug("Add new listener for the channel '%s': %s" % (channel, callback))
         
         if not updating:
-            self.noUpdateChannels.append(channel)
+            self.bluetoothData.noUpdateChannels.append(channel)
 
         # Add the listener...
-        if not channel in self.channels:
-            self.channels[channel] = [callback]
+        if not channel in self.bluetoothData.channels:
+            self.bluetoothData.channels[channel] = [callback]
         else:
-            self.channels[channel].append(callback)
+            self.bluetoothData.channels[channel].append(callback)
 
     def searchDevices(self):
         """Search for bluetooth devices"""
@@ -158,8 +163,8 @@ class BluetoothThread(threading.Thread):
 
     def getAllUpdates(self):
         """Get all updates in the listener channels"""
-        for channel in self.channels:
-            if not channel in self.noUpdateChannels:
+        for channel in self.bluetoothData.channels:
+            if not channel in self.bluetoothData.noUpdateChannels:
                 self.send(Message(channel = channel,  value = "update"))
 
     def calibrateEV3(self):
