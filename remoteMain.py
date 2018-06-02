@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 # This is the main file for the remote application
 # Author: Finn G.
 

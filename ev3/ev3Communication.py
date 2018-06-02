@@ -1,9 +1,10 @@
 # The EV3 communication socket
 # Author: Jan-Luca D., Finn G.
 
-
 import threading
+
 from bluetooth import *
+
 from constants import *
 from logger import *
 from utils import *
@@ -18,7 +19,7 @@ size = MSGLEN
 class BluetoothThread(threading.Thread):
     """Control the bluetooth connection"""
 
-    def __init__(self, receivedData, channels = {}):
+    def __init__(self, receivedData, channels={}):
         threading.Thread.__init__(self)
 
         self.connected = False
@@ -43,7 +44,8 @@ class BluetoothThread(threading.Thread):
     def addListener(self, channel, callback):
         """Add a listener for a channel"""
 
-        debug("Add new listener for the channel '%s': %s" % (channel, callback))
+        debug("Add new listener for the channel '%s': %s" %
+              (channel, callback))
 
         if not channel in self.channels:
             self.channels[channel] = [callback]
@@ -72,7 +74,8 @@ class BluetoothThread(threading.Thread):
         """Start the bluetooth server socket"""
         # Get MAC from device...
         try:
-            mac = runCommand("hcitool dev | grep -o \"[[:xdigit:]:]\{11,17\}\"")
+            mac = runCommand(
+                "hcitool dev | grep -o \"[[:xdigit:]:]\{11,17\}\"")
         except:
             error("Failed to create Server.")
             return -1
@@ -93,14 +96,14 @@ class BluetoothThread(threading.Thread):
 
     def closeServer(self):
         """Close the server"""
-        
+
         # Set status to disconnected...
         self.connected = False
         self.isRunning = False
 
         # Close bluetooth server...
         s.close()
-        
+
         info("Close bluetooth server")
 
     def send(self, message):
@@ -163,7 +166,10 @@ class BluetoothThread(threading.Thread):
                         # Check if the channel is in channels...
                         if channel in self.channels:
                             for i in range(len(self.channels[channel])):
-                                listener = threading.Thread(target = self.receivedData, args = (self.channels[channel][i], value), name = channel)
+                                listener = threading.Thread(
+                                    target=self.receivedData,
+                                    args=(self.channels[channel][i], value),
+                                    name=channel)
                                 listener.start()
                     elif len(fragments) == 1:
                         self.closeServer()

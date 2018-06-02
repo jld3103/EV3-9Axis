@@ -1,13 +1,13 @@
 # This is a dialog to manage the channel filter in the command line...
 # Author: Finn G.
 
-
 from PyQt4 import QtCore, QtGui
 
 from constants import *
 from logger import *
 
 setLogLevel(logLevel)
+
 
 class FilterDialog(QtGui.QDialog):
     """Show dialog for selecting a bluetooth device"""
@@ -22,7 +22,8 @@ class FilterDialog(QtGui.QDialog):
         self.parent = parent
 
         # Get the current channels...
-        self.channels = self.parent.settings.get("commandLineFilter", default = "").split("|")
+        self.channels = self.parent.settings.get("commandLineFilter",
+                                                 default="").split("|")
         if len(self.channels[0]) == 0:
             self.channels = []
 
@@ -61,11 +62,12 @@ class FilterDialog(QtGui.QDialog):
         self.close_button.setText("Close")
 
         # Connect the buttons...
-        self.connect(self.add_button, QtCore.SIGNAL("clicked()"),  self.onAdd)
-        self.connect(self.delete_button, QtCore.SIGNAL("clicked()"),  self.onDelete)
-        self.connect(self.ok_button, QtCore.SIGNAL("clicked()"),  self.onOk)
-        self.connect(self.close_button, QtCore.SIGNAL("clicked()"),  self.onClose)
-
+        self.connect(self.add_button, QtCore.SIGNAL("clicked()"), self.onAdd)
+        self.connect(self.delete_button,
+                     QtCore.SIGNAL("clicked()"), self.onDelete)
+        self.connect(self.ok_button, QtCore.SIGNAL("clicked()"), self.onOk)
+        self.connect(self.close_button,
+                     QtCore.SIGNAL("clicked()"), self.onClose)
 
     def onAdd(self):
         """Add the input to the list of channels"""
@@ -91,7 +93,7 @@ class FilterDialog(QtGui.QDialog):
         # Create a string of all channels...
         channels = ""
         for index in range(self.channes_listWidget.count()):
-             channels += self.channes_listWidget.item(index).text() + "|"
+            channels += self.channes_listWidget.item(index).text() + "|"
 
         # Delete the last lettre...
         channels = channels[:-1]

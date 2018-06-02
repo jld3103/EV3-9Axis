@@ -1,7 +1,8 @@
 # This widget displays the room
 # Author: Finn G., Jan-Luca D.
 
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtCore, QtGui
+
 from constants import *
 from logger import *
 from message import Message
@@ -9,13 +10,14 @@ from message import Message
 
 class Square():
     """This class describes a square"""
-    def __init__(self, grid, x = None, y = None, state = None):
+
+    def __init__(self, grid, x=None, y=None, state=None):
         self.grid = grid
 
         self._x = x
         self._y = y
 
-        self.state = state # True is a wall
+        self.state = state  # True is a wall
         self.previous = None
 
         self.f = 0
@@ -28,7 +30,6 @@ class Square():
         self.f = 0
         self.g = 0
         self.h = 0
-
 
     def getNeighbours(self):
         x = self.x()
@@ -71,38 +72,52 @@ class Square():
 
     def draw(self, painter, color):
         """Draw yourself"""
-        painter.fillRect(self.rect(), QtGui.QColor(color[0], color[1], color[2]))
-        
+        painter.fillRect(self.rect(),
+                         QtGui.QColor(color[0], color[1], color[2]))
+
     def drawOrientation(self, painter, orientation):
         """Draw an arrow to the current orientation"""
-        
+
         # Get the square coorinates...
         rect = self.rect()
         x = rect.x()
         y = rect.y()
         xCenter = x + (x + rect.width() - x) / 2
         yCenter = y + (y + rect.height() - y) / 2
-        
+
         # Set the pen...
-        pen = QtGui.QPen(QtGui.QColor(255,0,0))                      # set lineColor
-        pen.setWidth(3) 
-        brush = QtGui.QBrush(QtGui.QColor(255,0,0))  
+        pen = QtGui.QPen(QtGui.QColor(255, 0, 0))  # set lineColor
+        pen.setWidth(3)
+        brush = QtGui.QBrush(QtGui.QColor(255, 0, 0))
         painter.setPen(pen)
-        painter.setBrush(brush)  
-        
+        painter.setBrush(brush)
+
         # Create triangle for the current orientation...
         if orientation == 0:
-            triangle = QtGui.QPolygon([x + rect.width() / 4, y + rect.height() / 4, xCenter, y, x + rect.width() * 3/4, y + rect.height() / 4])
+            triangle = QtGui.QPolygon([
+                x + rect.width() / 4, y + rect.height() / 4, xCenter, y,
+                x + rect.width() * 3 / 4, y + rect.height() / 4
+            ])
         elif orientation == 1:
-            triangle = QtGui.QPolygon([x + rect.width() * 3/4, y + rect.height() / 4, x + rect.width(), yCenter, x + rect.width() * 3/4, y + rect.height() * 3/4])
+            triangle = QtGui.QPolygon([
+                x + rect.width() * 3 / 4, y + rect.height() / 4,
+                x + rect.width(), yCenter, x + rect.width() * 3 / 4,
+                y + rect.height() * 3 / 4
+            ])
         elif orientation == 2:
-            triangle = QtGui.QPolygon([x + rect.width() / 4, y + rect.height() * 3/4, xCenter, y + rect.height(), x + rect.width() * 3/4, y + rect.height() * 3/4])
+            triangle = QtGui.QPolygon([
+                x + rect.width() / 4, y + rect.height() * 3 / 4, xCenter,
+                y + rect.height(), x + rect.width() * 3 / 4,
+                y + rect.height() * 3 / 4
+            ])
         else:
-            triangle = QtGui.QPolygon([x + rect.width() / 4, y + rect.height() / 4, x, yCenter, x + rect.width()  / 4, y + rect.height() * 3/4])
-        
+            triangle = QtGui.QPolygon([
+                x + rect.width() / 4, y + rect.height() / 4, x, yCenter,
+                x + rect.width() / 4, y + rect.height() * 3 / 4
+            ])
+
         # Draw triangle...
         painter.drawPolygon(triangle)
-        
 
     def rect(self):
         """Calculate the rect of the square"""
@@ -126,23 +141,29 @@ class Square():
         squareSizeZoomed = self.grid.squareSize * self.grid.zoom
 
         # Calculate the border for drawing the room in the center of the image...
-        borderLeft = (width - self.grid.sizeX*(squareSizeZoomed + 1)) / 2
-        borderTop = (height - self.grid.sizeY*(squareSizeZoomed + 1)) / 2
+        borderLeft = (width - self.grid.sizeX * (squareSizeZoomed + 1)) / 2
+        borderTop = (height - self.grid.sizeY * (squareSizeZoomed + 1)) / 2
 
         # Get the start position of the square...
         if self.grid.center:
-            self.grid.startPosition = QtCore.QPoint(borderLeft + self.x() * (squareSizeZoomed + 1), borderTop + self.y() * (squareSizeZoomed + 1))
+            self.grid.startPosition = QtCore.QPoint(borderLeft + self.x() * (
+                squareSizeZoomed + 1), borderTop + self.y() *
+                                                    (squareSizeZoomed + 1))
             self.grid.startPos = QtCore.QPoint(borderLeft, borderTop)
         else:
-            self.grid.startPosition = QtCore.QPoint(self.grid.startPos.x() + self.x() * (squareSizeZoomed + 1), self.grid.startPos.y() + self.y() * (squareSizeZoomed + 1))
+            self.grid.startPosition = QtCore.QPoint(
+                self.grid.startPos.x() + self.x() * (squareSizeZoomed + 1),
+                self.grid.startPos.y() + self.y() * (squareSizeZoomed + 1))
 
         # Return the rect...
-        return QtCore.QRect(self.grid.startPosition.x(), self.grid.startPosition.y(), squareSizeZoomed, squareSizeZoomed)
-
+        return QtCore.QRect(self.grid.startPosition.x(),
+                            self.grid.startPosition.y(), squareSizeZoomed,
+                            squareSizeZoomed)
 
     def updateState(self, newState):
         """Update the square state"""
         self.state = newState
+
 
 class Grid():
     """This class manage the squares"""
@@ -153,7 +174,7 @@ class Grid():
 
         # Store the location of the EV3...
         self.current = self.grid[0][0]
-        self.currentOrientation = 0     # Top: 0 / Right: 1 / Bottom: 2 / Left: 3
+        self.currentOrientation = 0  # Top: 0 / Right: 1 / Bottom: 2 / Left: 3
 
         # Store sets...
         self.openSet = []
@@ -177,7 +198,6 @@ class Grid():
         self.squareSize = 30
         self.scaledSquareSize = 20
         self.startPos = QtCore.QPoint(0, 0)
-
 
     def findOnesWay(self, end):
         """Execute the A*"""
@@ -260,8 +280,10 @@ class Grid():
                 info("No solution!")
                 QtGui.QMessageBox.warning(None, "A*", "No solution!", "Ok")
                 return
-        self.parent.bluetooth.send(Message("current", "%d:%d:%d" % (self.current.x(),  self.current.y(), self.currentOrientation)))
-        
+        self.parent.bluetooth.send(
+            Message("current", "%d:%d:%d" % (
+                self.current.x(), self.current.y(), self.currentOrientation)))
+
         self.countTries = 0
 
         # Send the commands for the path to the ev3...
@@ -283,9 +305,9 @@ class Grid():
 
         while i < len(path):
             # Get the current and next square...
-            currentSquare = path[len(path)-i-1]
-            nextSquare = path[len(path)-i-2]
-            if i == len(path)-1:
+            currentSquare = path[len(path) - i - 1]
+            nextSquare = path[len(path) - i - 2]
+            if i == len(path) - 1:
                 break
 
             # Get the next orientation...
@@ -314,7 +336,7 @@ class Grid():
         for command in commands:
             value += command.channel + ":" + str(command.value) + "|"
 
-        command = Message(channel = "path", value = value[:-1])
+        command = Message(channel="path", value=value[:-1])
 
         return command
 
@@ -370,10 +392,11 @@ class Grid():
                 for i in range(x * -1):
                     line.insert(0, Square(self))
                 index += 1
-            self.sizeX += x* -1
+            self.sizeX += x * -1
 
             # Set start position...
-            self.startPos.setX(self.startPos.x() - ((self.squareSize * self.zoom + 1) * (x * -1)))
+            self.startPos.setX(self.startPos.x() - ((
+                self.squareSize * self.zoom + 1) * (x * -1)))
             # Set the x coordinate to zero...
             x = 0
 
@@ -386,7 +409,8 @@ class Grid():
                 self.grid.insert(0, line)
                 self.sizeY += 1
                 # Set start position...
-                self.startPos.setY(self.startPos.y() - (self.squareSize * self.zoom + 1))
+                self.startPos.setY(self.startPos.y() - (self.squareSize *
+                                                        self.zoom + 1))
             y = 0
         # Set the square on the given state...
         self.updateSquareState(x, y, state)
@@ -406,7 +430,7 @@ class Grid():
                 x = 0
             if y < 0:
                 y = 0
-            
+
         return self.grid[y][x]
 
     def getSquareAtCoordinate(self, x, y):
@@ -418,12 +442,14 @@ class Grid():
         # Find the square with the given coordinates...
         while True:
             # Get the rect...
-            square = Square(self, x = squarePosX, y = squarePosY)
-            rect =  square.rect()
+            square = Square(self, x=squarePosX, y=squarePosY)
+            rect = square.rect()
 
             # If coordinate in rect, return the position...
-            if x >= rect.x() and x <= (rect.x() + rect.width() + 1) and y >= rect.y() and y <= (rect.y() + rect.height() + 1):
-                    return square
+            if x >= rect.x() and x <= (rect.x() + rect.width() + 1
+                                       ) and y >= rect.y() and y <= (
+                                           rect.y() + rect.height() + 1):
+                return square
 
             # If coordinate is not in rect, set the next rect...
             else:
@@ -458,15 +484,17 @@ class Grid():
                     square.draw(painter, (250, 250, 250))
                 elif square in self.path:
                     square.draw(painter, (0, 0, 255))
-                elif square in self.openSet and self.parent.settings.get("showSets"):
+                elif square in self.openSet and self.parent.settings.get(
+                        "showSets"):
                     square.draw(painter, (0, 255, 0))
-                elif square in self.closedSet and self.parent.settings.get("showSets"):
+                elif square in self.closedSet and self.parent.settings.get(
+                        "showSets"):
                     square.draw(painter, (255, 0, 0))
                 elif square.state == False:
                     square.draw(painter, (0, 0, 0))
-                elif square.state == None and self.parent.settings.get("showFloorSquare"):
+                elif square.state == None and self.parent.settings.get(
+                        "showFloorSquare"):
                     square.draw(painter, (100, 100, 100))
-
 
                 x += 1
             y += 1
@@ -503,14 +531,17 @@ class Grid():
                     file.write("%d:%d\n" % (square.x(), square.y()))
         file.close()
 
+
 class RoomWidget(QtGui.QWidget):
     """This class displays the room with all barriers and etc."""
 
     def __init__(self, parent, settings, bluetooth):
-        super(RoomWidget,  self).__init__(parent=parent)
+        super(RoomWidget, self).__init__(parent=parent)
 
         # Create image...
-        self.image = QtGui.QImage(QtCore.QSize(self.width(), self.height()), QtGui.QImage.Format_RGB32)
+        self.image = QtGui.QImage(
+            QtCore.QSize(self.width(), self.height()),
+            QtGui.QImage.Format_RGB32)
 
         self.parent = parent
         self.settings = settings
@@ -530,36 +561,37 @@ class RoomWidget(QtGui.QWidget):
 
         # Load the old grid
         self.grid.load(gridFile)
-        
+
         # Add listener...
         self.bluetooth.addListener("current", self.setCurrent, updating=False)
         self.bluetooth.addListener("path", self.pathFeedback, updating=False)
         self.bluetooth.addListener("wall", self.setWall, updating=False)
-        
+
     def pathFeedback(self, value):
         """Get the path feedback and calcutates the path new"""
         if value == "failed":
             self.grid.findOnesWay(self.grid.end)
         elif value == "error":
-            QtGui.QMessageBox.warning(None, "EV3", "Cannot execute path!", "Ok")
-        
+            QtGui.QMessageBox.warning(None, "EV3", "Cannot execute path!",
+                                      "Ok")
+
     def setWall(self, value):
         """Set a wall in the grid"""
         x, y = value.split(":")
         square = self.grid.getSquare(int(x), int(y))
         square.updateState(True)
-        
+
     def setCurrent(self, value):
         """Set the current position"""
-                
+
         values = value.split(":")
-        
+
         # Set the current square...
         self.grid.current = self.grid.getSquare(int(values[0]), int(values[1]))
-        
+
         # Set the current orientation...
         self.grid.currentOrientation = int(values[2])
-        
+
         # Draw the square...
         self.grid.draw(self.image)
 
@@ -580,16 +612,20 @@ class RoomWidget(QtGui.QWidget):
 
     def onStartPos(self):
         """Set the start position"""
-        clickedSquare = self.grid.getSquareAtCoordinate(self.mousePos.x(), self.mousePos.y())
-        self.grid.current = self.grid.getSquare(clickedSquare.x(), clickedSquare.y())
+        clickedSquare = self.grid.getSquareAtCoordinate(self.mousePos.x(),
+                                                        self.mousePos.y())
+        self.grid.current = self.grid.getSquare(clickedSquare.x(),
+                                                clickedSquare.y())
 
         # Draw the square...
         self.grid.draw(self.image)
 
     def onEndPos(self):
         """Set the end position of the algorithm"""
-        clickedSquare = self.grid.getSquareAtCoordinate(self.mousePos.x(), self.mousePos.y())
-        self.grid.findOnesWay(self.grid.getSquare(clickedSquare.x(), clickedSquare.y()))
+        clickedSquare = self.grid.getSquareAtCoordinate(self.mousePos.x(),
+                                                        self.mousePos.y())
+        self.grid.findOnesWay(
+            self.grid.getSquare(clickedSquare.x(), clickedSquare.y()))
 
         # Draw the grid...
         self.grid.draw(self.image)

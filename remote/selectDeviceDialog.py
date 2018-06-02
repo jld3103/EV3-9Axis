@@ -1,14 +1,14 @@
 # This is a dialog for selecting a bloutooth deveice
 # Author: Finn G.
 
-
 from PyQt4 import QtCore, QtGui
 
+import remote.remoteCommunication as communication
 from constants import *
 from logger import *
-import remote.remoteCommunication as communication
 
 setLogLevel(logLevel)
+
 
 class SelectDeviceDialog(QtGui.QDialog):
     """Show dialog for selecting a bluetooth device"""
@@ -51,8 +51,8 @@ class SelectDeviceDialog(QtGui.QDialog):
         self.btn_close.show()
 
         # Connect buttons...
-        self.connect(self.btn_ok, QtCore.SIGNAL("clicked()"),  self.onOk)
-        self.connect(self.btn_close, QtCore.SIGNAL("clicked()"),  self.onClose)
+        self.connect(self.btn_ok, QtCore.SIGNAL("clicked()"), self.onOk)
+        self.connect(self.btn_close, QtCore.SIGNAL("clicked()"), self.onClose)
 
     def onOk(self):
         """Save the selected device"""
@@ -65,7 +65,11 @@ class SelectDeviceDialog(QtGui.QDialog):
         mac = device.split("-")[1].strip()
 
         # Start the Thread for the bluetooth connection with the selected device...
-        self.parent.bluetooth = communication.BluetoothThread(self.parent, self.parent.bluetoothEvent, macAddress=mac, bluetoothData=self.parent.bluetooth.bluetoothData)
+        self.parent.bluetooth = communication.BluetoothThread(
+            self.parent,
+            self.parent.bluetoothEvent,
+            macAddress=mac,
+            bluetoothData=self.parent.bluetooth.bluetoothData)
         self.parent.bluetooth.setName("BluetoothThread")
         self.parent.bluetooth.start()
 

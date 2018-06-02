@@ -1,14 +1,16 @@
-# This file control the EV3
+# This file controls the EV3
 # Author: Finn G., Jan-Luca D.
 
-import ev3dev.ev3 as ev3
-import ev3.ev3Communication as communication
-import ev3.MPU9250 as MPU9250
-from message import Message
-from constants import *
-from logger import *
 import queue
 import time
+
+import ev3.ev3Communication as communication
+import ev3.MPU9250 as MPU9250
+import ev3dev.ev3 as ev3
+from constants import *
+from logger import *
+from message import Message
+
 
 class EV3:
     """Controls the EV3"""
@@ -18,14 +20,14 @@ class EV3:
         # Init screen...
         self.screen = ev3.Screen()
 
-        self.orientation = 0 # Top: 0 / Right: 1 / Bottom: 2 / Left: 3
+        self.orientation = 0  # Top: 0 / Right: 1 / Bottom: 2 / Left: 3
         self.current = (0, 0)
 
         # Calibration data
-        self.cFT = 3000 # cFT = CalibrateForwardTime
+        self.cFT = 3000  # cFT = CalibrateForwardTime
         self.cFL = 255
         self.cFR = 255
-        self.cWD = 2300 # cWD = calibrateWallDistance
+        self.cWD = 2300  # cWD = calibrateWallDistance
 
         self.cLT = 3000
         self.cLL = 255
@@ -74,7 +76,7 @@ class EV3:
         self.bluetooth.addListener("calibrateDistance", self.calibrateDistance)
         self.bluetooth.addListener("path", self.path)
         self.bluetooth.addListener("current", self.setCurrent)
-        
+
     def receivedData(self, function, value):
         """Execute the listener for the channel"""
 
@@ -96,7 +98,7 @@ class EV3:
             # If the value is not the same like the last time, send the value to the remote...
             if value != oldValue:
                 oldValue = value
-                self.bluetooth.send(Message(channel = channel,  value = value))
+                self.bluetooth.send(Message(channel=channel, value=value))
 
             # If the mode is not updating, send the data only once...
             if not updating:
@@ -104,7 +106,6 @@ class EV3:
 
             # Wait for 0.1 seconds (TODO: Set interval from the remote)
             time.sleep(0.1)
-
 
     def calibrateForward(self, data):
         """Calibrate the time and speed to drive forward"""
@@ -141,12 +142,12 @@ class EV3:
             self.cRL = int(data[1])
             self.cRR = int(data[2])
         return ("calibrateRight", "Success")
-    
+
     def calibrateDistance(self, data):
         """Calibrate the maximum distance to detect an obstacle"""
         self.cWD = int(data)
         return ("calibrateDistance", "Success")
-        
+
     def controlTheDrive(self, startR, startL):
         """Check until the robot stops the touch sensor"""
         obstacle = False
@@ -162,54 +163,56 @@ class EV3:
                 self.motorL.stop()
                 obstacle = True
                 # Drive to old postion...
-                self.motorR.run_to_abs_pos(position_sp=startR, speed_sp=self.cLR)
-                self.motorL.run_to_abs_pos(position_sp=startL, speed_sp=self.cLL)
-            time.sleep(0.1)   
-            
+                self.motorR.run_to_abs_pos(
+                    position_sp=startR, speed_sp=self.cLR)
+                self.motorL.run_to_abs_pos(
+                    position_sp=startL, speed_sp=self.cLL)
+            time.sleep(0.1)
+
         return not obstacle
 
     def _1Forward(self):
         """Drive one square forward"""
         info("1 forward")
-        
+
         # Notice the current tacho Spostion...
         absPositionR = self.motorR.position
         absPositionL = self.motorL.position
-        
+
         # Run the motors...
-        self.motorR.run_timed(time_sp = self.cFT, speed_sp = self.cFR)
-        self.motorL.run_timed(time_sp = self.cFT, speed_sp = self.cFL)
-        
+        self.motorR.run_timed(time_sp=self.cFT, speed_sp=self.cFR)
+        self.motorL.run_timed(time_sp=self.cFT, speed_sp=self.cFL)
+
         return self.controlTheDrive(absPositionR, absPositionL)
 
     def _90Left(self):
         """Turn 90° left"""
         info("90 left")
-        
+
         # Notice the current tacho Spostion...
         absPositionR = self.motorR.position
         absPositionL = self.motorL.position
-        
+
         # Run the motors...
-        self.motorR.run_timed(time_sp = self.cLT, speed_sp = self.cLR)
-        self.motorL.run_timed(time_sp = self.cLT, speed_sp = -self.cLL)
-        
+        self.motorR.run_timed(time_sp=self.cLT, speed_sp=self.cLR)
+        self.motorL.run_timed(time_sp=self.cLT, speed_sp=-self.cLL)
+
         return self.controlTheDrive(absPositionR, absPositionL)
 
     def _90Right(self):
         """Turn 90° right"""
         info("90 right")
-        
+
         # Notice the current tacho Spostion...
         absPositionR = self.motorR.position
         absPositionL = self.motorL.position
-        
+
         # Run the motors...
-        self.motorR.run_timed(time_sp = self.cLT, speed_sp = -self.cLR)
-        self.motorL.run_timed(time_sp = self.cLT, speed_sp = self.cLL)
-        
+        self.motorR.run_timed(time_sp=self.cLT, speed_sp=-self.cLR)
+        self.motorL.run_timed(time_sp=self.cLT, speed_sp=self.cLL)
+
         return self.controlTheDrive(absPositionR, absPositionL)
-            
+
     def isWall(self):
         """Check if the next square is a wall"""
         distance = self.sendDistanceValue(None)[1]
@@ -218,7 +221,9 @@ class EV3:
                 info("There is a wall")
                 return True
         else:
-            error("Cannot check if there is a wall (Distance sensor not connected)")
+            error(
+                "Cannot check if there is a wall (Distance sensor not connected)"
+            )
             return False
         logging.info("There is no wall")
         return False
@@ -229,7 +234,7 @@ class EV3:
         self.current = (int(values[0]), int(values[1]))
         self.orientation = int(values[2])
         return ("current", value)
-        
+
     def getNextSquare(self):
         """Returns the next square"""
 
@@ -244,7 +249,7 @@ class EV3:
             y += 1
         elif o == 3:
             x -= 1
-            
+
         return x, y
 
     def path(self, value):
@@ -261,40 +266,65 @@ class EV3:
             if channel == "forward":
                 for i in range(int(value)):
                     if self.isWall():
-                        self.bluetooth.send(Message(channel = "wall",  value = "%d:%d" % self.getNextSquare()))
+                        self.bluetooth.send(
+                            Message(
+                                channel="wall",
+                                value="%d:%d" % self.getNextSquare()))
                         return ("path", "failed")
-                    if  not self._1Forward():
-                        self.bluetooth.send(Message(channel = "wall",  value = "%d:%d" % self.getNextSquare()))
+                    if not self._1Forward():
+                        self.bluetooth.send(
+                            Message(
+                                channel="wall",
+                                value="%d:%d" % self.getNextSquare()))
                         return ("path", "failed")
                     self.current = (self.getNextSquare())
-                    self.bluetooth.send(Message(channel = "current",  value = "%d:%d:%d" % (self.current[0], self.current[1], self.orientation)))
+                    self.bluetooth.send(
+                        Message(
+                            channel="current",
+                            value="%d:%d:%d" % (self.current[0], self.
+                                                current[1], self.orientation)))
             # If the channel is 'turn', turn the robot to position...
             elif channel == "turn":
                 value = int(value)
-                if  self.orientation == 3 and value == 0:
+                if self.orientation == 3 and value == 0:
                     if not self._90Right():
                         return ("path", "error")
                     self.orientation = 0
-                    self.bluetooth.send(Message(channel = "current",  value = "%d:%d:%d" % (self.current[0], self.current[1], self.orientation)))
-                if  self.orientation == 0 and value == 3:
+                    self.bluetooth.send(
+                        Message(
+                            channel="current",
+                            value="%d:%d:%d" % (self.current[0], self.
+                                                current[1], self.orientation)))
+                if self.orientation == 0 and value == 3:
                     if not self._90Left():
                         return ("path", "error")
                     self.orientation = 3
-                    self.bluetooth.send(Message(channel = "current",  value = "%d:%d:%d" % (self.current[0], self.current[1], self.orientation)))
+                    self.bluetooth.send(
+                        Message(
+                            channel="current",
+                            value="%d:%d:%d" % (self.current[0], self.
+                                                current[1], self.orientation)))
                 elif self.orientation < value:
                     for i in range(value - self.orientation):
                         if not self._90Right():
                             return ("path", "error")
                         self.orientation += 1
-                        self.bluetooth.send(Message(channel = "current",  value = "%d:%d:%d" % (self.current[0], self.current[1], self.orientation)))
+                        self.bluetooth.send(
+                            Message(
+                                channel="current",
+                                value="%d:%d:%d" % (self.current[
+                                    0], self.current[1], self.orientation)))
                 else:
                     for i in range(self.orientation - value):
                         if not self._90Left():
                             return ("path", "error")
                         self.orientation -= 1
-                        self.bluetooth.send(Message(channel = "current",  value = "%d:%d:%d" % (self.current[0], self.current[1], self.orientation)))
+                        self.bluetooth.send(
+                            Message(
+                                channel="current",
+                                value="%d:%d:%d" % (self.current[
+                                    0], self.current[1], self.orientation)))
                 self.orientation = value
-                
 
         return ("path", "Success")
 
@@ -318,10 +348,10 @@ class EV3:
                 x = int(point.split("|")[0])
                 y = int(point.split("|")[1])
             except:
-                return ("screen",  "Value has wrong format (x|y:x|y:...)")
+                return ("screen", "Value has wrong format (x|y:x|y:...)")
             self.screen.draw.point((x, y))
         self.screen.update()
-        return ("screen",  "Success")
+        return ("screen", "Success")
 
     def forward(self, value):
         """Move forward"""
@@ -332,11 +362,11 @@ class EV3:
 
         # Run the motor...
         try:
-            self.motorR.run_timed(time_sp = time, speed_sp = speed)
-            self.motorL.run_timed(time_sp = time, speed_sp = speed)
+            self.motorR.run_timed(time_sp=time, speed_sp=speed)
+            self.motorL.run_timed(time_sp=time, speed_sp=speed)
             return ("motorRL", "%d:%d" % (time, speed))
         except:
-            return ("motorRL",  "Device not connected")
+            return ("motorRL", "Device not connected")
 
     def rotate(self, value):
         """Rotate around itself"""
@@ -347,11 +377,11 @@ class EV3:
 
         # Run the motor...
         try:
-            self.motorR.run_timed(time_sp = time, speed_sp = -speed)
-            self.motorL.run_timed(time_sp = time, speed_sp = speed)
+            self.motorR.run_timed(time_sp=time, speed_sp=-speed)
+            self.motorL.run_timed(time_sp=time, speed_sp=speed)
             return ("motorRL", "%d:%d" % (time, speed))
         except:
-            return ("motorRL",  "Device not connected")
+            return ("motorRL", "Device not connected")
 
     def turnRight(self, value):
         """Turn the right motor"""
@@ -362,21 +392,21 @@ class EV3:
 
         # Run the motor...
         try:
-            self.motorR.run_timed(time_sp = time, speed_sp = speed)
+            self.motorR.run_timed(time_sp=time, speed_sp=speed)
             return ("motorR", "%d:%d" % (time, speed))
         except:
-            return ("motorR",  "Device not connected")
+            return ("motorR", "Device not connected")
 
     def turnLeft(self, value):
         """Turn the left motor"""
         # Get time and speed...
         fragments = value.split(":")
         time = int(fragments[0].strip())
-        speed=int(fragments[1].strip())
+        speed = int(fragments[1].strip())
 
         # Run the motor...
         try:
-            self.motorL.run_timed(time_sp = time, speed_sp = speed)
+            self.motorL.run_timed(time_sp=time, speed_sp=speed)
             return ("motorL", "%d:%d" % (time, speed))
         except:
             return ("motorL", "Device not connected")
@@ -406,21 +436,21 @@ class EV3:
         """Send the value of the infrared sensor"""
         try:
             value = int(self.infraredSensor.value() * 25.5)
-            return ("infraredSensor",  value)
+            return ("infraredSensor", value)
         except:
             # Try to reconnect...
             self.infraredSensor = ev3.InfraredSensor()
-            return ("infraredSensor",  "Device not connected")
+            return ("infraredSensor", "Device not connected")
 
     def sendUltraValue(self, value):
         """Send the value of the ultra sensor"""
         try:
             value = self.ultraSensor.value()
-            return ("ultraSensor",  value)
+            return ("ultraSensor", value)
         except:
             # Try to reconnect...
             self.ultraSensor = ev3.UltrasonicSensor()
-            return ("ultraSensor",  "Device not connected")
+            return ("ultraSensor", "Device not connected")
 
     def sendDistanceValue(self, value):
         """Send the value of the ultra or infrared sensor"""
@@ -435,11 +465,11 @@ class EV3:
         """Send the value of the touch sensor"""
         try:
             value = self.touchSensor.value()
-            return ("touchSensor",  value)
+            return ("touchSensor", value)
         except:
             # Try to reconnect...
             self.touchSensor = ev3.TouchSensor()
-            return ("touchSensor",  "Device not connected")
+            return ("touchSensor", "Device not connected")
 
     def sendAccelData(self, value):
         """Send the values of the accelometer"""
@@ -455,7 +485,7 @@ class EV3:
         """Send the values of the magnetometer"""
         mag = self.mpu9250.readMag()
         return ("mag", mag)
-        
+
     def sendTemData(self, value):
         """Send the values of the thermometer"""
         temp = self.mpu9250.readTemp()

@@ -3,28 +3,25 @@
 
 version = "1.2"
 
+import signal
+
 # Import the GUI library PyQt4...
 from PyQt4 import QtCore, QtGui
 
-# Import the bluetooth communication...
-import remote.remoteCommunication as communication
-
+import remote.calibrateDialog as calibrateDialog
 # Import all widget...
 import remote.commandLineWidget as commandLineWidget
+import remote.filterDialog as filterDialog
+# Import the bluetooth communication...
+import remote.remoteCommunication as communication
 import remote.robotWidget as robotWidget
 import remote.roomWidget as roomWidget
-
 # Import all dialogs...
 import remote.selectDeviceDialog as selectDeviceDialog
-import remote.calibrateDialog as calibrateDialog
-import remote.filterDialog as filterDialog
-
-# Import all tool...
 from constants import *
 from logger import *
 from message import Message
 from settings import Settings
-import signal
 
 setLogLevel(logLevel)
 
@@ -82,15 +79,31 @@ class MainWindow(QtGui.QMainWindow):
 
         # Create all actions of the main menu...
         self.connectionAction = QtGui.QAction("&Connect", self)
-        self.showFloorSquareAction = QtGui.QAction("&%s floor squares" % ("Hide" if self.settings.get("showFloorSquare", default = True) else "Show"), self)
-        self.showSetsAction = QtGui.QAction("&%s sets" % ("Hide" if self.settings.get("showSets", default = False) else "Show"), self)
-        self.showSentMsgAction = QtGui.QAction("&%s sent messages" % ("Hide" if self.settings.get("showSentMsg", default = True) else "Show"), self)
-        self.showReceivedMsgAction = QtGui.QAction("&%s received messages" % ("Hide" if self.settings.get("showReceivedMsg", default = True) else "Show"), self)
-        self.channelFilterAction = QtGui.QAction("&Manage channel filter", self)
+        self.showFloorSquareAction = QtGui.QAction(
+            "&%s floor squares" % ("Hide" if self.settings.get(
+                "showFloorSquare", default=True) else "Show"),
+            self)
+        self.showSetsAction = QtGui.QAction(
+            "&%s sets" %
+            ("Hide"
+             if self.settings.get("showSets", default=False) else "Show"),
+            self)
+        self.showSentMsgAction = QtGui.QAction(
+            "&%s sent messages" %
+            ("Hide"
+             if self.settings.get("showSentMsg", default=True) else "Show"),
+            self)
+        self.showReceivedMsgAction = QtGui.QAction(
+            "&%s received messages" % ("Hide" if self.settings.get(
+                "showReceivedMsg", default=True) else "Show"),
+            self)
+        self.channelFilterAction = QtGui.QAction("&Manage channel filter",
+                                                 self)
         self.calibrateFAction = QtGui.QAction("&Calibrate forward", self)
         self.calibrateRAction = QtGui.QAction("&Calibrate turn right", self)
         self.calibrateLAction = QtGui.QAction("&Calibrate turn left", self)
-        self.calibrateDAction = QtGui.QAction("&Calibrate distance sensor", self)
+        self.calibrateDAction = QtGui.QAction("&Calibrate distance sensor",
+                                              self)
 
         # Connect all actions of the main menu...
         self.connectionAction.triggered.connect(self.onConnection)
@@ -123,12 +136,14 @@ class MainWindow(QtGui.QMainWindow):
         self.bluetoothEvent.connect(self.onBluetoothEvent)
 
         # Start the Thread for the bluetooth connection...
-        self.bluetooth = communication.BluetoothThread(self, self.bluetoothEvent)
+        self.bluetooth = communication.BluetoothThread(self,
+                                                       self.bluetoothEvent)
         self.bluetooth.setName("BluetoothThread")
         self.bluetooth.start()
 
         # Insert the widgets...
-        self.room_widget = roomWidget.RoomWidget(self, self.settings, self.bluetooth)
+        self.room_widget = roomWidget.RoomWidget(self, self.settings,
+                                                 self.bluetooth)
         self.robot_widget = robotWidget.Robot(self, self.bluetooth)
         self.commandLine = commandLineWidget.CommandLine(self, self.bluetooth)
 
@@ -167,7 +182,8 @@ class MainWindow(QtGui.QMainWindow):
         x = self.size().width() * 0.7 + 1
         y = self.size().width() * 0.2 + self.menubarHeight + 2
         x2 = self.size().width() - self.size().width() * 0.7
-        y2 = self.size().height() - self.menubarHeight * 2 - self.size().width() * 0.2 -2
+        y2 = self.size().height() - self.menubarHeight * 2 - self.size().width(
+        ) * 0.2 - 2
         rect = QtCore.QRect(x, y, x2, y2)
         return rect
 
@@ -220,7 +236,10 @@ class MainWindow(QtGui.QMainWindow):
         if not self.bluetooth.connected and not self.bluetooth.isAlive():
             # Start the Thread for the bluetooth connection...
             info("Send connect signal")
-            self.bluetooth = communication.BluetoothThread(self, self.bluetoothEvent, bluetoothData = self.bluetooth.bluetoothData)
+            self.bluetooth = communication.BluetoothThread(
+                self,
+                self.bluetoothEvent,
+                bluetoothData=self.bluetooth.bluetoothData)
             self.bluetooth.setName("BluetoothThread")
             self.bluetooth.start()
 
@@ -237,7 +256,8 @@ class MainWindow(QtGui.QMainWindow):
 
         # Execute the function for this channel...
         if message.channel in self.bluetooth.bluetoothData.channels and not message.value == "Device not connected":
-            for function in self.bluetooth.bluetoothData.channels[message.channel]:
+            for function in self.bluetooth.bluetoothData.channels[message.
+                                                                  channel]:
                 function(message.value)
 
     def handleConnection(self, value):
@@ -258,11 +278,14 @@ class MainWindow(QtGui.QMainWindow):
             self.bluetooth.calibrateEV3()
             self.bluetooth.getAllUpdates()
             # Show the connected dialog...
-            QtGui.QMessageBox.information(None, "Bluetooth", "Connected", QtGui.QMessageBox.Ok)
+            QtGui.QMessageBox.information(None, "Bluetooth", "Connected",
+                                          QtGui.QMessageBox.Ok)
         elif value == "Disconnected":
-            QtGui.QMessageBox.information(None, "Bluetooth", "Disconnected", QtGui.QMessageBox.Ok)
+            QtGui.QMessageBox.information(None, "Bluetooth", "Disconnected",
+                                          QtGui.QMessageBox.Ok)
         elif value == "Failed to connect":
-            QtGui.QMessageBox.information(None, "Bluetooth", "Failed to connect!", QtGui.QMessageBox.Ok)
+            QtGui.QMessageBox.information(
+                None, "Bluetooth", "Failed to connect!", QtGui.QMessageBox.Ok)
 
     def onCalibrateF(self):
         """Calibrate froward on the ev3"""
@@ -278,7 +301,7 @@ class MainWindow(QtGui.QMainWindow):
         """Calibrate left on the ev3"""
         dialog = calibrateDialog.CalibrateDialog(self, mode="Left")
         dialog.show()
-        
+
     def onCalibrateD(self):
         """Calibrate distance sensor"""
         dialog = calibrateDialog.CalibrateDialog(self, mode="Distance")
@@ -314,7 +337,8 @@ class MainWindow(QtGui.QMainWindow):
         self.settings.save()
 
         if self.bluetooth.connected:
-            question = QtGui.QMessageBox.question(None, "Connection", "Close server?", "Yes", "No")
+            question = QtGui.QMessageBox.question(None, "Connection",
+                                                  "Close server?", "Yes", "No")
 
             # Close the server...
             if question == 0:

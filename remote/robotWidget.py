@@ -1,15 +1,15 @@
-#!/usr/bin/python3
-
 # This widget displays the robot in 3D
 # Author: Finn G.
 
-from PyQt4 import QtGui,  QtCore, QtOpenGL
+import math
+import threading
+
 from OpenGL import GLU
 from OpenGL.GL import *
+from PyQt4 import QtCore, QtGui, QtOpenGL
+
 from constants import *
 from logger import *
-import threading
-import math
 
 setLogLevel(logLevel)
 
@@ -58,12 +58,15 @@ class ObjLoader(threading.Thread):
 
                     # Define the vertex...
                     if self.changeYZ:
-                        vertex = (float(values[1]) + moveX, float(values[3]) + moveY, float(values[2]) + moveZ)
+                        vertex = (float(values[1]) + moveX, float(values[3]) +
+                                  moveY, float(values[2]) + moveZ)
                     else:
-                        vertex = (float(values[1]) + moveX, float(values[2]) + moveY, float(values[3]) + moveZ)
+                        vertex = (float(values[1]) + moveX, float(values[2]) +
+                                  moveY, float(values[3]) + moveZ)
 
                     # Round the values...
-                    vertex = (round(vertex[0],2),round(vertex[1],2),round(vertex[2],2))
+                    vertex = (round(vertex[0], 2), round(vertex[1], 2), round(
+                        vertex[2], 2))
 
                     # Append the vertex to the list of the vertices...
                     self.vertices.append(vertex)
@@ -71,26 +74,31 @@ class ObjLoader(threading.Thread):
                 # Check if the line define a face...
                 elif line[0] == "f":
                     # Replace all "//" with "/", because both syntxes are correct...
-                    string = line.replace("//","/").strip()
+                    string = line.replace("//", "/").strip()
 
                     # Split the line in 'f' and the values (Point 1, Point 2, ...)...
                     items = string.split(" ")
                     del items[0]
 
                     # Calculate normal of the face (For the lightning)...
-                    normal = self.getNormal(self.vertices[int(items[0].split("/")[0]) - 1], self.vertices[int(items[1].split("/")[0]) - 1], self.vertices[int(items[2].split("/")[0]) - 1])
+                    normal = self.getNormal(
+                        self.vertices[int(items[0].split("/")[0]) - 1],
+                        self.vertices[int(items[1].split("/")[0]) - 1],
+                        self.vertices[int(items[2].split("/")[0]) - 1])
                     index = len(self.normals) + 1
 
                     # Check if normal already exist...
                     if normal in self.normals:
                         index = self.normals.index(normal) + 1
-                        debug("%s: Old Normal:       %d" % (self.filename, index))
+                        debug("%s: Old Normal:       %d" %
+                              (self.filename, index))
                     else:
-                        debug("%s: New Normal: %f %f %f" % (self.filename, normal[0], normal[1], normal[2]))
+                        debug("%s: New Normal: %f %f %f" %
+                              (self.filename, normal[0], normal[1], normal[2]))
                         self.normals.append(normal)
 
                     # Define the face...
-                    face  = []
+                    face = []
                     for item in items:
                         if len(item) == 0:
                             continue
@@ -112,7 +120,8 @@ class ObjLoader(threading.Thread):
         except IOError:
             error("Could not open the .obj file...")
 
-    def setColor(self, r = defaultColor[0], g = defaultColor[1], b = defaultColor[2]):
+    def setColor(self, r=defaultColor[0], g=defaultColor[1],
+                 b=defaultColor[2]):
         """Set the color of the 3D object"""
         self.color = [r, g, b, 1.0]
 
@@ -120,22 +129,19 @@ class ObjLoader(threading.Thread):
         """Calculate the normal of a triangles face"""
 
         # Calculate the normal...
-        d = [a[0] - b[0],
-            a[1] - b[1],
-            a[2] - b[2]]
-        e = [b[0] - c[0],
-            b[1]-c[1],
-            b[2]-c[2]]
+        d = [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+        e = [b[0] - c[0], b[1] - c[1], b[2] - c[2]]
 
-        normal = [d[1] * e[2] - d[2] * e[1],
-                        d[2] * e[0] - d[0] * e[2],
-                        d[0] * e[1] - d[1] * e[0]]
+        normal = [
+            d[1] * e[2] - d[2] * e[1], d[2] * e[0] - d[0] * e[2],
+            d[0] * e[1] - d[1] * e[0]
+        ]
 
         # Norm the normal...
-        normal_length = float(math.sqrt(normal[0] ** 2 + normal[1] ** 2 + normal[2] ** 2))
-        normed = [(normal[0]) / normal_length,
-                         (normal[1]) / normal_length,
-                         (normal[2]) / normal_length]
+        normal_length = float(
+            math.sqrt(normal[0]**2 + normal[1]**2 + normal[2]**2))
+        normed = [(normal[0]) / normal_length, (normal[1]) / normal_length,
+                  (normal[2]) / normal_length]
 
         return normed
 
@@ -192,6 +198,7 @@ class ObjLoader(threading.Thread):
                     glVertex3fv(self.vertices[int(f[:f.find("/")]) - 1])
                 glEnd()
 
+
 class Robot(QtOpenGL.QGLWidget):
 
     updateEvent = QtCore.pyqtSignal()
@@ -205,21 +212,23 @@ class Robot(QtOpenGL.QGLWidget):
         self.zRotDeg = 0
 
         # Define all objects (The file names will be replace with an ObjLoader object)...
-        self.objects = { "brick" : "brick.obj",
-                                "distanceSensorConnector" : "distance_sensor_connector.obj",
-                                "distanceSensor" : "distance_sensor.obj",
-                                "motorR" : "motor_right.obj",
-                                "motorL" : "motor_left.obj",
-                                "wheelR" : "wheel_right.obj",
-                                "wheelL" : "wheel_left.obj",
-                                "wheelBack" : "wheel_back.obj",
-                                "wheelBackConnector" : "wheel_back_connector.obj",
-                                "motorsConnectorTop" : "motors_connector_top.obj",
-                                "motorsConnectorBottem" : "motors_connector_bottem.obj",
-                                "touchSensorConnector" : "touch_sensor_connector.obj",
-                                "touchSensorHead" : "touch_sensor_head.obj",
-                                "touchSensor" : "touch_sensor.obj",
-                                "colorSensor" : "color_sensor.obj"}
+        self.objects = {
+            "brick": "brick.obj",
+            "distanceSensorConnector": "distance_sensor_connector.obj",
+            "distanceSensor": "distance_sensor.obj",
+            "motorR": "motor_right.obj",
+            "motorL": "motor_left.obj",
+            "wheelR": "wheel_right.obj",
+            "wheelL": "wheel_left.obj",
+            "wheelBack": "wheel_back.obj",
+            "wheelBackConnector": "wheel_back_connector.obj",
+            "motorsConnectorTop": "motors_connector_top.obj",
+            "motorsConnectorBottem": "motors_connector_bottem.obj",
+            "touchSensorConnector": "touch_sensor_connector.obj",
+            "touchSensorHead": "touch_sensor_head.obj",
+            "touchSensor": "touch_sensor.obj",
+            "colorSensor": "color_sensor.obj"
+        }
 
         # This pyqt signal will be call when a ObjLoader thread is ready with calculating...
         self.updateEvent.connect(self.paintGL)
@@ -230,72 +239,74 @@ class Robot(QtOpenGL.QGLWidget):
         bluetooth.addListener("distanceSensor", self.setDistanceSensor)
         bluetooth.addListener("accel", self.setAccel)
         bluetooth.addListener("mag", self.setMag)
-        
+
         self.max = 0
         self.min = 0
 
         self.oldMousePosition = 0
-        
-    def dist(self, a,b):
-        return math.sqrt((a*a)+(b*b))
-            
-    def get_y_rotation(self, x,y,z):
-        radians = math.atan2(x, self.dist(y,z))
+
+    def dist(self, a, b):
+        return math.sqrt((a * a) + (b * b))
+
+    def get_y_rotation(self, x, y, z):
+        radians = math.atan2(x, self.dist(y, z))
         return -math.degrees(radians)
-         
-    def get_x_rotation(self, x,y,z):
-        radians = math.atan2(y, self.dist(x,z))
+
+    def get_x_rotation(self, x, y, z):
+        radians = math.atan2(y, self.dist(x, z))
         return math.degrees(radians)
-        
+
     def setAccel(self, value):
         """Set the rotation of the robot"""
-        
+
         axis = value.split(":")
-        
+
         try:
             accel_xout = float(axis[0])
             accel_yout = float(axis[1])
             accel_zout = float(axis[2])
         except:
             return
-        
+
         accel_xout_scaled = accel_xout / 16384.0
         accel_yout_scaled = accel_yout / 16384.0
         accel_zout_scaled = accel_zout / 16384.0
 
-        self.xRotDeg =  self.get_x_rotation(accel_xout_scaled, accel_yout_scaled, accel_zout_scaled)
-        self.yRotDeg =  self.get_y_rotation(accel_xout_scaled, accel_yout_scaled, accel_zout_scaled)
+        self.xRotDeg = self.get_x_rotation(
+            accel_xout_scaled, accel_yout_scaled, accel_zout_scaled)
+        self.yRotDeg = self.get_y_rotation(
+            accel_xout_scaled, accel_yout_scaled, accel_zout_scaled)
         self.updateGL()
-        
+
     def setMag(self, value):
         axis = value.split(":")
-        
+
         try:
             mag_xout = (float(axis[0]) - 16.38) * 0.02453
-            mag_yout = (float(axis[1]) -16.38) * 0.02453
+            mag_yout = (float(axis[1]) - 16.38) * 0.02453
             #mag_zout = float(axis[2])
         except:
             return
-            
+
         if self.min == 0:
             self.min = min(mag_xout, mag_yout)
-            
+
         self.min = min(self.min, min(mag_xout, mag_yout))
         self.max = max(self.max, max(mag_xout, mag_yout))
-            
+
         xGaussData = mag_xout * 0.48828125
         yGaussData = mag_yout * 0.48828125
-        
-        d = math.atan(yGaussData/xGaussData) * (180/math.pi)
-            
+
+        d = math.atan(yGaussData / xGaussData) * (180 / math.pi)
+
         if d > 360:
             d -= 360
-            
+
         elif d < 0:
             d += 360
-        
+
         info("%f %f %f" % (d, self.min, self.max))
-            
+
         self.zRotDeg = d
 
     def setTouchSensor(self, value):
@@ -343,7 +354,7 @@ class Robot(QtOpenGL.QGLWidget):
         colorG = min((value * steps) / 255, 1.0)
         colorR = 1
         if colorG == 1:
-            colorR = 1 + ((255 - (value -50) * steps) / 255)
+            colorR = 1 + ((255 - (value - 50) * steps) / 255)
 
         # Set the color...
         self.objects["distanceSensor"].setColor(colorR, colorG, 0)
@@ -399,31 +410,32 @@ class Robot(QtOpenGL.QGLWidget):
         # Rotate the object...
         glRotate(self.xRotDeg, 1, 0, 0)
         glRotate(self.yRotDeg, 0, 0, 1)
-#        glRotate(self.zRotDeg, 0, 1, 0)
+        #        glRotate(self.zRotDeg, 0, 1, 0)
 
         # Render each object...
         for object in self.objects:
             self.objects[object].render_scene()
 
         # Add ambient light...
-        glLightModelfv(GL_LIGHT_MODEL_AMBIENT,[1, 1, 1, 0.1])
+        glLightModelfv(GL_LIGHT_MODEL_AMBIENT, [1, 1, 1, 0.1])
 
         # Add positioned light...
-        glLightfv(GL_LIGHT0,GL_DIFFUSE,[1,1,1,0.1])
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, [1, 1, 1, 0.1])
 
     def initGeometry(self):
         """Init the geometry"""
 
         # Load each file in another thread...
         for object in self.objects:
-            objFile = ObjLoader("remote/textures/%s" % self.objects[object], self.updateEvent)
+            objFile = ObjLoader("remote/textures/%s" % self.objects[object],
+                                self.updateEvent)
             objFile.setName(self.objects[object] + " Thread")
             objFile.start()
             self.objects[object] = objFile
 
     def spin(self, degrees=None):
         """Spin the 3D object"""
-        self.yRotDeg =  (self.yRotDeg - degrees) % 360.0
+        self.yRotDeg = (self.yRotDeg - degrees) % 360.0
         self.updateGL()
 
     def mousePressEvent(self, event):

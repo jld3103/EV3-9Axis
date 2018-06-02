@@ -2,7 +2,9 @@
 # Author: Jan-Luca D., Finn G.
 
 import threading
+
 from bluetooth import *
+
 from constants import *
 from logger import *
 from message import Message
@@ -11,9 +13,11 @@ from utils import *
 s = None
 setLogLevel(logLevel)
 
+
 class BluetoothData():
     """Save the bluetooth data until the programm close"""
-    def __init__(self, channels = {}, noUpdateChannels = []):
+
+    def __init__(self, channels={}, noUpdateChannels=[]):
         self.channels = channels
         self.noUpdateChannels = noUpdateChannels
 
@@ -21,7 +25,11 @@ class BluetoothData():
 class BluetoothThread(threading.Thread):
     """Control the bluetooth connection"""
 
-    def __init__(self, parent, bluetoothEvent, macAddress = None, bluetoothData = BluetoothData()):
+    def __init__(self,
+                 parent,
+                 bluetoothEvent,
+                 macAddress=None,
+                 bluetoothData=BluetoothData()):
         threading.Thread.__init__(self)
 
         self.bluetoothEvent = bluetoothEvent
@@ -44,15 +52,18 @@ class BluetoothThread(threading.Thread):
         except Exception as e:
             debug("Failed to connect (Debug message): %s" % str(e).strip())
             error("Failed to connect")
-            self.bluetoothEvent.emit(Message(channel = "connection", value = "Failed to connect"))
+            self.bluetoothEvent.emit(
+                Message(
+                    channel="connection", value="Failed to connect"))
             info("Close bluetooth service")
             return
 
     def addListener(self, channel, callback, updating=True):
         """Add a listener for a channel"""
 
-        debug("Add new listener for the channel '%s': %s" % (channel, callback))
-        
+        debug("Add new listener for the channel '%s': %s" %
+              (channel, callback))
+
         if not updating:
             self.bluetoothData.noUpdateChannels.append(channel)
 
@@ -67,11 +78,13 @@ class BluetoothThread(threading.Thread):
         info("Searching for devices")
 
         # Inform the GUI...
-        self.bluetoothEvent.emit(Message(channel = "connection", value = "Search devices"))
+        self.bluetoothEvent.emit(
+            Message(
+                channel="connection", value="Search devices"))
 
         # Search devices
         try:
-            nearby_devices = discover_devices(lookup_names = True)
+            nearby_devices = discover_devices(lookup_names=True)
         except:
             raise Exception("Please activate bluetooth")
             return
@@ -96,7 +109,9 @@ class BluetoothThread(threading.Thread):
         if len(nearby_devices) == 1:
             return nearby_devices[0][0]
         else:
-            self.bluetoothEvent.emit(Message(channel = "selectDevice", value = devices))
+            self.bluetoothEvent.emit(
+                Message(
+                    channel="selectDevice", value=devices))
             return None
 
     def readStoredMAC(self):
@@ -142,7 +157,9 @@ class BluetoothThread(threading.Thread):
         self.storeMAC(mac)
 
         # Inform the GUI...
-        self.bluetoothEvent.emit(Message(channel = "connection", value = "Connecting..."))
+        self.bluetoothEvent.emit(
+            Message(
+                channel="connection", value="Connecting..."))
 
         # Connect...
         global s
@@ -154,25 +171,52 @@ class BluetoothThread(threading.Thread):
         self.connected = True
 
         # Listen for messages...
-        listenThread = threading.Thread(target = self.listen)
+        listenThread = threading.Thread(target=self.listen)
         listenThread.setName("ListenThread")
         listenThread.start()
-        
+
         # Inform the GUI...
-        self.bluetoothEvent.emit(Message(channel = "connection", value = "Connected"))
+        self.bluetoothEvent.emit(
+            Message(
+                channel="connection", value="Connected"))
 
     def getAllUpdates(self):
         """Get all updates in the listener channels"""
         for channel in self.bluetoothData.channels:
             if not channel in self.bluetoothData.noUpdateChannels:
-                self.send(Message(channel = channel,  value = "update"))
+                self.send(Message(channel=channel, value="update"))
 
     def calibrateEV3(self):
         """Calibrate the ev3..."""
-        self.send(Message(channel = "calibrateForward", value = "%d:%d:%d" % (self.parent.settings.get("calibrateForwardTime", default = 3000), self.parent.settings.get("calibrateForwardSpeedR", default = 255), self.parent.settings.get("calibrateForwardSpeedL", default = 255))))
-        self.send(Message(channel = "calibrateRight", value = "%d:%d:%d" % (self.parent.settings.get("calibrateRightTime", default = 3000), self.parent.settings.get("calibrateRightSpeedR", default = 255), self.parent.settings.get("calibrateRightSpeedL", default = 255))))
-        self.send(Message(channel = "calibrateLeft", value = "%d:%d:%d" % (self.parent.settings.get("calibrateLeftTime", default = 3000), self.parent.settings.get("calibrateLeftSpeedR", default = 255), self.parent.settings.get("calibrateLeftSpeedL", default = 255))))
-        self.send(Message(channel = "calibrateDistance", value = "%d" % (self.parent.settings.get("calibrateDistance", default = 2000))))
+        self.send(
+            Message(
+                channel="calibrateForward",
+                value="%d:%d:%d" %
+                (self.parent.settings.get("calibrateForwardTime",
+                                          default=3000), self.parent.settings.
+                 get("calibrateForwardSpeedR", default=255), self.parent.
+                 settings.get("calibrateForwardSpeedL", default=255))))
+        self.send(
+            Message(
+                channel="calibrateRight",
+                value="%d:%d:%d" %
+                (self.parent.settings.get("calibrateRightTime", default=3000),
+                 self.parent.settings.get("calibrateRightSpeedR", default=255),
+                 self.parent.settings.get("calibrateRightSpeedL",
+                                          default=255))))
+        self.send(
+            Message(
+                channel="calibrateLeft",
+                value="%d:%d:%d" %
+                (self.parent.settings.get("calibrateLeftTime", default=3000),
+                 self.parent.settings.get("calibrateLeftSpeedR", default=255),
+                 self.parent.settings.get("calibrateLeftSpeedL",
+                                          default=255))))
+        self.send(
+            Message(
+                channel="calibrateDistance",
+                value="%d" % (self.parent.settings.get("calibrateDistance",
+                                                       default=2000))))
 
     def disconnect(self):
         """Disconnect from bluetooth device"""
@@ -190,13 +234,15 @@ class BluetoothThread(threading.Thread):
         self.connected = False
 
         # Inform the GUI...
-        self.bluetoothEvent.emit(Message(channel = "connection", value = "Disconnected"))
+        self.bluetoothEvent.emit(
+            Message(
+                channel="connection", value="Disconnected"))
 
     def send(self, message):
         """Send data to bluetooth device"""
 
         # Inform the command line...
-        self.parent.commandLine.newMessage(message, sent = True)
+        self.parent.commandLine.newMessage(message, sent=True)
 
         text = str(message) + ";"
         debug("Send '%s' to bluetooth device" % text)
@@ -213,7 +259,9 @@ class BluetoothThread(threading.Thread):
                 self.connected = False
 
                 # Inform the GUI...
-                self.bluetoothEvent.emit(Message(channel = "connection", value = "Disconnected"))
+                self.bluetoothEvent.emit(
+                    Message(
+                        channel="connection", value="Disconnected"))
 
     def listen(self):
         """Receive messages with a callback"""
@@ -234,7 +282,9 @@ class BluetoothThread(threading.Thread):
                     self.connected = False
 
                     # Inform the GUI...
-                    self.bluetoothEvent.emit(Message(channel = "connection", value = "Disconnected"))
+                    self.bluetoothEvent.emit(
+                        Message(
+                            channel="connection", value="Disconnected"))
 
                 # Stop listening...
                 info("Stop listening")
@@ -246,6 +296,9 @@ class BluetoothThread(threading.Thread):
 
             # Inform the GUI...
             if len(fragments) == 2:
-                self.bluetoothEvent.emit(Message(channel = fragments[0].strip(), value = fragments[1].strip()))
+                self.bluetoothEvent.emit(
+                    Message(
+                        channel=fragments[0].strip(),
+                        value=fragments[1].strip()))
 
         info("Stop listening")

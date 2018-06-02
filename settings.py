@@ -1,10 +1,11 @@
 # Settings file
 # Author: Finn G.
 
-from utils import *
 from constants import *
+from utils import *
 
 setLogLevel(logLevel)
+
 
 class Settings():
 
@@ -35,7 +36,7 @@ class Settings():
         except:
             error("Cannot find the settings file")
 
-    def get(self, key, default = None):
+    def get(self, key, default=None):
         """Get a value in the settings"""
         # If the key is in the settings, return the value...
         if key in self.settings:
