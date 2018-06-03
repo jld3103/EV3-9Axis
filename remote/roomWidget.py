@@ -188,6 +188,7 @@ class Grid():
         self.path = []
         self.previewPath = []
         self.countTries = 0
+        self.executingPath = False
 
         # Define parent...
         self.parent = parent
@@ -281,17 +282,19 @@ class Grid():
                 # Draw the path...
                 self.draw(self.parent.image)
                 if not preview:
+                    self.executingPath = False
                     info("No solution!")
                     QtGui.QMessageBox.warning(None, "A*", "No solution!", "Ok")
                 return
 
         self.countTries = 0
-        
+
         if preview:
             self.previewPath = path
         else:
+            self.executingPath = True
             self.path = path
-            
+
             self.parent.bluetooth.send(
             Message("current", "%d:%d:%d" % (
                 self.current.x(), self.current.y(), self.currentOrientation)))
@@ -472,8 +475,8 @@ class Grid():
                     squarePosY -= 1
                 elif y >= squareBottom.rect().y():
                     squarePosY += 1
-                    
-                    
+
+
     def isSquareInGrid(self, square):
         """Check if the given coordinate in the current grid"""
         x = square.x()
@@ -483,7 +486,7 @@ class Grid():
         elif x >= self.sizeX or y >= self.sizeY:
             return False
         return True
-        
+
     def draw(self, image):
         """Draw the image"""
 
@@ -580,7 +583,7 @@ class RoomWidget(QtGui.QWidget):
         # Save old mouse position...
         self.mousePos = None
         self.squareAtMousePos = None
-        
+
         # Set mouse tracking to true...
         self.setMouseTracking(True)
 
@@ -599,8 +602,10 @@ class RoomWidget(QtGui.QWidget):
             # Draw the image...
             self.grid.draw(self.image)
         elif value == "error":
-            QtGui.QMessageBox.warning(None, "EV3", "Cannot execute path!",
-                                      "Ok")
+            self.executingPath = False
+            QtGui.QMessageBox.warning(None, "EV3", "Unknown problem occured!", "Ok")
+        elif value == "Success":
+            self.executingPath = False
 
     def setWall(self, value):
         """Set a wall in the grid"""
@@ -610,7 +615,7 @@ class RoomWidget(QtGui.QWidget):
 
     def setCurrent(self, value):
         """Set the current position"""
-        
+
         # Delete current position in the path...
         if self.grid.current in self.grid.path:
             del self.grid.path[self.grid.path.index(self.grid.current)]
@@ -622,7 +627,7 @@ class RoomWidget(QtGui.QWidget):
 
         # Set the current orientation...
         self.grid.currentOrientation = int(values[2])
-        
+
         # Update the preview path...
         self.grid.findOnesWay(self.squareAtMousePos, preview = True)
 
@@ -656,6 +661,11 @@ class RoomWidget(QtGui.QWidget):
 
     def onEndPos(self):
         """Set the end position of the algorithm"""
+        if self.grid.executingPath:
+            question = QtGui.QMessageBox.question(None, "EV3", "Stop EV3 and find new path?", "Ok", "Cancel")
+            if question == 1:
+                return
+
         clickedSquare = self.grid.getSquareAtCoordinate(self.mousePos.x(),
                                                         self.mousePos.y())
         self.grid.findOnesWay(
@@ -708,7 +718,7 @@ class RoomWidget(QtGui.QWidget):
             self.grid.center = False
             self.grid.scale = False
             self.moved = False
-            
+
             self.grid.findOnesWay(square)
 
             # Draw the image...
@@ -729,7 +739,7 @@ class RoomWidget(QtGui.QWidget):
 
     def mouseMoveEvent(self, event):
         """Get difference to the last mouse event"""
-        
+
         if event.buttons() == QtCore.Qt.NoButton and self.parent.settings.get("showPreviewPath"):
             pos = event.pos()
             # Get the square at the mouse position...
@@ -747,7 +757,7 @@ class RoomWidget(QtGui.QWidget):
             self.grid.findOnesWay(square, preview = True)
             # Draw the image...
             self.grid.draw(self.image)
-            
+
         elif event.buttons() == QtCore.Qt.LeftButton:
             # Get difference to the last position...
             difference = event.pos() - self.mousePos
