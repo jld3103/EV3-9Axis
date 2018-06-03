@@ -23,7 +23,7 @@ class Square():
         self.f = 0
         self.g = 0
         self.h = 0
-        
+
         # Set state...
         if state != None:
             self.updateState(state)
@@ -167,13 +167,13 @@ class Square():
     def updateState(self, newState):
         """Update the square state"""
         self.state = newState
-        
-        if self.state:            
+
+        if self.state:
             self.grid.getSquare(self.x()- 1, self.y())
             self.grid.getSquare(self.x(), self.y() - 1)
             self.grid.getSquare(self.x() + 1, self.y())
             self.grid.getSquare(self.x(), self.y() + 1)
-            
+
 class Grid():
     """This class manage the squares"""
 
@@ -667,6 +667,8 @@ class RoomWidget(QtGui.QWidget):
             question = QtGui.QMessageBox.question(None, "EV3", "Stop EV3 and find new path?", "Ok", "Cancel")
             if question == 1:
                 return
+
+        self.bluetooth.send(Message("path", "break"))
 
         clickedSquare = self.grid.getSquareAtCoordinate(self.mousePos.x(),
                                                         self.mousePos.y())
