@@ -644,6 +644,7 @@ class RoomWidget(QtGui.QWidget):
         # Add the actions...
         self.menu.addAction("Set start position", self.onStartPos)
         self.menu.addAction("Set end position", self.onEndPos)
+        self.menu.addAction("Stop path", self.onStopPath)
         self.menu.addAction("Center", self.onCenter)
         self.menu.addAction("Reset zoom", self.onResetZoom)
         self.menu.addAction("Reset grid", self.onResetGrid)
@@ -676,6 +677,14 @@ class RoomWidget(QtGui.QWidget):
             self.grid.getSquare(clickedSquare.x(), clickedSquare.y()))
 
         # Draw the grid...
+        self.grid.draw(self.image)
+        
+    def onStopPath(self):
+        """Stop the path on the ev3"""
+        self.bluetooth.send(Message("path", "stop"))
+        self.grid.path = []
+        
+        # Draw the image...
         self.grid.draw(self.image)
 
     def onResetGrid(self):
