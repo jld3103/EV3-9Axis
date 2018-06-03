@@ -186,6 +186,7 @@ class Grid():
 
         # Define the current path...
         self.path = []
+        self.previewPath = []
         self.countTries = 0
 
         # Define parent...
@@ -199,16 +200,19 @@ class Grid():
         self.scaledSquareSize = 20
         self.startPos = QtCore.QPoint(0, 0)
 
-    def findOnesWay(self, end):
+    def findOnesWay(self, end, preview = False):
         """Execute the A*"""
 
         # Store the data
         self.start = self.current
-        self.end = end
         self.openSet = []
         self.closedSet = []
-        self.path = []
+        if not preview:
+            self.path = []
+            self.end = end
+        self.previewPath = []
         self.finding = True
+        path = []
 
         # Add the start square to the possible squares...
         self.openSet.append(self.start)
@@ -228,8 +232,7 @@ class Grid():
                         winner = i
                 # Update shortest way
                 current = self.openSet[winner]
-                if current == self.end:
-                    info("Done!")
+                if current == end:
                     self.finding = False
 
                 # Shift the current square in the close sets...
@@ -257,37 +260,45 @@ class Grid():
                             newPath = True
                         if newPath:
                             # Update the other variables if g updated...
-                            neighbour.h = self.heuristic(neighbour, self.end)
+                            neighbour.h = self.heuristic(neighbour, end)
                             neighbour.f = neighbour.g + neighbour.h
                             neighbour.previous = current
                 # Find path and store...
-                self.path = []
+                path = []
                 t = current
-                self.path.append(self.start)
+                path.append(self.start)
                 while t.previous != None:
-                    self.path.append(t)
+                    path.append(t)
                     t = t.previous
             else:
                 self.finding = False
-                if self.countTries == 0:
+                if self.countTries == 0 and not preview:
                     self.getSquare(-1, -1)
                     self.getSquare(self.sizeX, self.sizeY)
                     self.countTries += 1
-                    self.findOnesWay(self.end)
+                    self.findOnesWay(end)
                     return
                 # Draw the path...
                 self.draw(self.parent.image)
-                info("No solution!")
-                QtGui.QMessageBox.warning(None, "A*", "No solution!", "Ok")
+                if not preview:
+                    info("No solution!")
+                    QtGui.QMessageBox.warning(None, "A*", "No solution!", "Ok")
                 return
-        self.parent.bluetooth.send(
+
+        self.countTries = 0
+        
+        if preview:
+            self.previewPath = path
+        else:
+            self.path = path
+            
+            self.parent.bluetooth.send(
             Message("current", "%d:%d:%d" % (
                 self.current.x(), self.current.y(), self.currentOrientation)))
 
-        self.countTries = 0
 
-        # Send the commands for the path to the ev3...
-        self.parent.bluetooth.send(self.getPathCommand(self.path))
+            # Send the commands for the path to the ev3...
+            self.parent.bluetooth.send(self.getPathCommand(path))
 
     def getPathCommand(self, path):
         """Put all commands for the ev3 in a list"""
@@ -395,8 +406,7 @@ class Grid():
             self.sizeX += x * -1
 
             # Set start position...
-            self.startPos.setX(self.startPos.x() - ((
-                self.squareSize * self.zoom + 1) * (x * -1)))
+            self.startPos.setX(self.startPos.x() - ((self.squareSize * self.zoom + 1) * (x * -1)))
             # Set the x coordinate to zero...
             x = 0
 
@@ -443,26 +453,37 @@ class Grid():
         while True:
             # Get the rect...
             square = Square(self, x=squarePosX, y=squarePosY)
+            squareBottom = Square(self, x=squarePosX, y=squarePosY+1)
+            squareRight = Square(self, x=squarePosX+1, y=squarePosY)
             rect = square.rect()
 
             # If coordinate in rect, return the position...
-            if x >= rect.x() and x <= (rect.x() + rect.width() + 1
-                                       ) and y >= rect.y() and y <= (
-                                           rect.y() + rect.height() + 1):
+            if x >= rect.x() and x < squareRight.rect().x() and y >= rect.y() and y < squareBottom.rect().y():
                 return square
 
             # If coordinate is not in rect, set the next rect...
             else:
                 if x < rect.x():
                     squarePosX -= 1
-                elif x > (rect.x() + rect.width()):
+                elif x >= squareRight.rect().x():
                     squarePosX += 1
 
                 if y < rect.y():
                     squarePosY -= 1
-                elif y > (rect.y() + rect.height()):
+                elif y >= squareBottom.rect().y():
                     squarePosY += 1
-
+                    
+                    
+    def isSquareInGrid(self, square):
+        """Check if the given coordinate in the current grid"""
+        x = square.x()
+        y = square.y()
+        if x < 0 or y < 0:
+            return False
+        elif x >= self.sizeX or y >= self.sizeY:
+            return False
+        return True
+        
     def draw(self, image):
         """Draw the image"""
 
@@ -484,11 +505,11 @@ class Grid():
                     square.draw(painter, (250, 250, 250))
                 elif square in self.path:
                     square.draw(painter, (0, 0, 255))
-                elif square in self.openSet and self.parent.settings.get(
-                        "showSets"):
+                elif square in self.previewPath and self.parent.settings.get("showPreviewPath"):
+                    square.draw(painter, (120, 120, 200))
+                elif square in self.openSet and self.parent.settings.get("showSets"):
                     square.draw(painter, (0, 255, 0))
-                elif square in self.closedSet and self.parent.settings.get(
-                        "showSets"):
+                elif square in self.closedSet and self.parent.settings.get("showSets"):
                     square.draw(painter, (255, 0, 0))
                 elif square.state == False:
                     square.draw(painter, (0, 0, 0))
@@ -558,6 +579,10 @@ class RoomWidget(QtGui.QWidget):
 
         # Save old mouse position...
         self.mousePos = None
+        self.squareAtMousePos = None
+        
+        # Set mouse tracking to true...
+        self.setMouseTracking(True)
 
         # Load the old grid
         self.grid.load(gridFile)
@@ -571,6 +596,8 @@ class RoomWidget(QtGui.QWidget):
         """Get the path feedback and calcutates the path new"""
         if value == "failed":
             self.grid.findOnesWay(self.grid.end)
+            # Draw the image...
+            self.grid.draw(self.image)
         elif value == "error":
             QtGui.QMessageBox.warning(None, "EV3", "Cannot execute path!",
                                       "Ok")
@@ -583,6 +610,10 @@ class RoomWidget(QtGui.QWidget):
 
     def setCurrent(self, value):
         """Set the current position"""
+        
+        # Delete current position in the path...
+        if self.grid.current in self.grid.path:
+            del self.grid.path[self.grid.path.index(self.grid.current)]
 
         values = value.split(":")
 
@@ -591,6 +622,9 @@ class RoomWidget(QtGui.QWidget):
 
         # Set the current orientation...
         self.grid.currentOrientation = int(values[2])
+        
+        # Update the preview path...
+        self.grid.findOnesWay(self.squareAtMousePos, preview = True)
 
         # Draw the square...
         self.grid.draw(self.image)
@@ -668,18 +702,17 @@ class RoomWidget(QtGui.QWidget):
         if self.moved < 5:
             # Get the clicked square....
             square = self.grid.getSquareAtCoordinate(event.x(), event.y())
+            square = self.grid.getSquare(square.x(), square.y())
 
-            if not square == None:
-                # Update new state...
-                self.grid.center = False
-                self.grid.scale = False
-                self.moved = False
+            # Update new state...
+            self.grid.center = False
+            self.grid.scale = False
+            self.moved = False
+            
+            self.grid.findOnesWay(square)
 
-                # Add the square...
-                self.grid.addSquare(square.x(), square.y(), True)
-
-                # Draw the image...
-                self.grid.draw(self.image)
+            # Draw the image...
+            self.grid.draw(self.image)
 
     def mousePressEvent(self, event):
         """Called when the mouse is pressed"""
@@ -696,27 +729,46 @@ class RoomWidget(QtGui.QWidget):
 
     def mouseMoveEvent(self, event):
         """Get difference to the last mouse event"""
+        
+        if event.buttons() == QtCore.Qt.NoButton and self.parent.settings.get("showPreviewPath"):
+            pos = event.pos()
+            # Get the square at the mouse position...
+            square = self.grid.getSquareAtCoordinate(pos.x(), pos.y())
+            # If the square is the same like the last time break up the process...
+            if self.squareAtMousePos != None:
+                if square.x() == self.squareAtMousePos.x() and square.y() == self.squareAtMousePos.y():
+                    return
+            # If the square is not in the current grid break up the process...
+            if not self.grid.isSquareInGrid(square):
+                return
+            square = self.grid.getSquare(square.x(), square.y())
+            self.squareAtMousePos = square
+            # Get the path to the square...
+            self.grid.findOnesWay(square, preview = True)
+            # Draw the image...
+            self.grid.draw(self.image)
+            
+        elif event.buttons() == QtCore.Qt.LeftButton:
+            # Get difference to the last position...
+            difference = event.pos() - self.mousePos
 
-        # Get difference to the last position...
-        difference = event.pos() - self.mousePos
+            # Update moved...
+            if difference.x() + difference.y() < 0:
+                self.moved -= difference.x() + difference.y()
+            else:
+                self.moved += difference.x() + difference.y()
 
-        # Update moved...
-        if difference.x() + difference.y() < 0:
-            self.moved -= difference.x() + difference.y()
-        else:
-            self.moved += difference.x() + difference.y()
+            # Update start position...
+            self.grid.startPos += difference
 
-        # Update start position...
-        self.grid.startPos += difference
+            # Save current mouse position...
+            self.mousePos = event.pos()
 
-        # Save current mouse position...
-        self.mousePos = event.pos()
+            # Update centering...
+            self.grid.center = False
 
-        # Update centering...
-        self.grid.center = False
-
-        # Draw the image...
-        self.grid.draw(self.image)
+            # Draw the image...
+            self.grid.draw(self.image)
 
     def wheelEvent(self, event):
         """Called when the mouse wheel spin"""

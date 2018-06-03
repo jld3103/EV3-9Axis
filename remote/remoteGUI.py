@@ -79,36 +79,22 @@ class MainWindow(QtGui.QMainWindow):
 
         # Create all actions of the main menu...
         self.connectionAction = QtGui.QAction("&Connect", self)
-        self.showFloorSquareAction = QtGui.QAction(
-            "&%s floor squares" % ("Hide" if self.settings.get(
-                "showFloorSquare", default=True) else "Show"),
-            self)
-        self.showSetsAction = QtGui.QAction(
-            "&%s sets" %
-            ("Hide"
-             if self.settings.get("showSets", default=False) else "Show"),
-            self)
-        self.showSentMsgAction = QtGui.QAction(
-            "&%s sent messages" %
-            ("Hide"
-             if self.settings.get("showSentMsg", default=True) else "Show"),
-            self)
-        self.showReceivedMsgAction = QtGui.QAction(
-            "&%s received messages" % ("Hide" if self.settings.get(
-                "showReceivedMsg", default=True) else "Show"),
-            self)
-        self.channelFilterAction = QtGui.QAction("&Manage channel filter",
-                                                 self)
+        self.showFloorSquareAction = QtGui.QAction("&%s floor squares" % ("Hide" if self.settings.get("showFloorSquare", default=True) else "Show"), self)
+        self.showSetsAction = QtGui.QAction("&%s sets" % ("Hide" if self.settings.get("showSets", default=False) else "Show"), self)
+        self.showPreviewPathAction = QtGui.QAction("&%s preview path" % ("Hide" if self.settings.get("showPreviewPath", default=True) else "Show"), self)
+        self.showSentMsgAction = QtGui.QAction("&%s sent messages" % ("Hide" if self.settings.get("showSentMsg", default=True) else "Show"), self)
+        self.showReceivedMsgAction = QtGui.QAction("&%s received messages" % ("Hide" if self.settings.get("showReceivedMsg", default=True) else "Show"), self)
+        self.channelFilterAction = QtGui.QAction("&Manage channel filter",self)
         self.calibrateFAction = QtGui.QAction("&Calibrate forward", self)
         self.calibrateRAction = QtGui.QAction("&Calibrate turn right", self)
         self.calibrateLAction = QtGui.QAction("&Calibrate turn left", self)
-        self.calibrateDAction = QtGui.QAction("&Calibrate distance sensor",
-                                              self)
+        self.calibrateDAction = QtGui.QAction("&Calibrate distance sensor", self)
 
         # Connect all actions of the main menu...
         self.connectionAction.triggered.connect(self.onConnection)
         self.showFloorSquareAction.triggered.connect(self.onShowFloorSquare)
         self.showSetsAction.triggered.connect(self.onShowSets)
+        self.showPreviewPathAction.triggered.connect(self.onShowPreviewPath)
         self.showSentMsgAction.triggered.connect(self.onShowSentMsg)
         self.showReceivedMsgAction.triggered.connect(self.onShowReceivedMsg)
         self.channelFilterAction.triggered.connect(self.onManageChannelFilter)
@@ -121,6 +107,7 @@ class MainWindow(QtGui.QMainWindow):
         bluetoothMenu.addAction(self.connectionAction)
         roomMenu.addAction(self.showFloorSquareAction)
         roomMenu.addAction(self.showSetsAction)
+        roomMenu.addAction(self.showPreviewPathAction)
         cmdMenu.addAction(self.showSentMsgAction)
         cmdMenu.addAction(self.showReceivedMsgAction)
         cmdMenu.addAction(self.channelFilterAction)
@@ -219,6 +206,17 @@ class MainWindow(QtGui.QMainWindow):
             self.settings.set("showSets", True)
             self.showSetsAction.setText("Hide sets")
         self.room_widget.updateImage()
+        
+    def onShowPreviewPath(self):
+        """Show or hid the example path to the current mouse position"""
+        if self.settings.get("showPreviewPath"):
+            self.settings.set("showPreviewPath", False)
+            self.showPreviewPathAction.setText("Show preview path")
+        else:
+            self.settings.set("showPreviewPath", True)
+            self.showPreviewPathAction.setText("Hide preview path")
+        self.room_widget.updateImage()
+
 
     def onShowFloorSquare(self):
         """Show the floor squares in the room widget"""
