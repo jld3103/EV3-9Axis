@@ -17,12 +17,16 @@ class Square():
         self._x = x
         self._y = y
 
-        self.state = state  # True is a wall
+        self.state = None  # True is a wall
         self.previous = None
 
         self.f = 0
         self.g = 0
         self.h = 0
+        
+        # Set state...
+        if state != None:
+            self.updateState(state)
 
     def resetAlgorithmData(self):
         """Reset all the data for the algorithm"""
@@ -163,8 +167,13 @@ class Square():
     def updateState(self, newState):
         """Update the square state"""
         self.state = newState
-
-
+        
+        if self.state:            
+            self.grid.getSquare(self.x()- 1, self.y())
+            self.grid.getSquare(self.x(), self.y() - 1)
+            self.grid.getSquare(self.x() + 1, self.y())
+            self.grid.getSquare(self.x(), self.y() + 1)
+            
 class Grid():
     """This class manage the squares"""
 
@@ -187,7 +196,6 @@ class Grid():
         # Define the current path...
         self.path = []
         self.previewPath = []
-        self.countTries = 0
 
         # Define parent...
         self.parent = parent
@@ -272,16 +280,10 @@ class Grid():
                     t = t.previous
             else:
                 self.finding = False
-                if self.countTries == 0 and not preview:
-                    self.getSquare(-1, -1)
-                    self.getSquare(self.sizeX, self.sizeY)
-                    self.countTries += 1
-                    self.findOnesWay(end)
-                    return
                 # Draw the path...
                 self.draw(self.parent.image)
                 if not preview:
-                    info("No solution!")
+                    info("A*: No solution!")
                     QtGui.QMessageBox.warning(None, "A*", "No solution!", "Ok")
                 return
 
