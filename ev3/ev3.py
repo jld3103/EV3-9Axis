@@ -22,6 +22,9 @@ class EV3:
 
         self.orientation = 0  # Top: 0 / Right: 1 / Bottom: 2 / Left: 3
         self.current = (0, 0)
+        
+        self.runningPath = False
+        self.stopPath = False
 
         # Calibration data
         self.cFT = 3000  # cFT = CalibrateForwardTime
@@ -89,7 +92,9 @@ class EV3:
         while self.bluetooth.connected:
             # Get the value...
             data = function(value)
-            if len(data) > 1:
+            if data == None:
+                break
+            elif len(data) > 1:
                 channel, value = data
             else:
                 channel = data[0]
@@ -150,26 +155,31 @@ class EV3:
 
     def controlTheDrive(self, startR, startL):
         """Check until the robot stops the touch sensor"""
-        obstacle = False
+        result = 0
         # Wait until the motors stop...
         while self.motorR.is_running or self.motorL.is_running:
             tsValue = self.sendTouchValue(None)[1]
             if tsValue == "Device not connected":
                 time.sleep(0.1)
                 continue
-            if tsValue:
+            if tsValue or self.stopPath:
                 # Stop turning...
                 self.motorR.stop()
                 self.motorL.stop()
-                obstacle = True
+                result = 1
+                if self.stopPath:
+                    self.stopPath = False
+                    result = -1
                 # Drive to old postion...
                 self.motorR.run_to_abs_pos(
                     position_sp=startR, speed_sp=self.cLR)
                 self.motorL.run_to_abs_pos(
                     position_sp=startL, speed_sp=self.cLL)
+                    
+                
             time.sleep(0.1)
 
-        return not obstacle
+        return result
 
     def _1Forward(self):
         """Drive one square forward"""
@@ -254,7 +264,18 @@ class EV3:
 
     def path(self, value):
         """Listen to the path commands"""
-
+        
+        if value.strip() == "stop":
+            self.stopPath = True
+            info("Stop path")
+            return
+        
+        # Wait until the old path is excecuted...
+        while self.runningPath:
+            time.sleep(0.1)
+            
+        self.runningPath = True
+        self.stopPath = False
         commands = value.split("|")
 
         # Execute all command for this path...
@@ -266,66 +287,67 @@ class EV3:
             if channel == "forward":
                 for i in range(int(value)):
                     if self.isWall():
-                        self.bluetooth.send(
-                            Message(
-                                channel="wall",
-                                value="%d:%d" % self.getNextSquare()))
+                        self.bluetooth.send(Message(channel="wall", value="%d:%d" % self.getNextSquare()))
+                        self.runningPath = False
                         return ("path", "failed")
-                    if not self._1Forward():
-                        self.bluetooth.send(
-                            Message(
-                                channel="wall",
-                                value="%d:%d" % self.getNextSquare()))
+                    move = self._1Forward()
+                    if move == 1:
+                        self.bluetooth.send(Message(channel="wall", value="%d:%d" % self.getNextSquare()))
+                        self.runningPath = False
                         return ("path", "failed")
+                    elif move == -1:
+                        self.runningPath = False
+                        return ("path", "stopped")
                     self.current = (self.getNextSquare())
-                    self.bluetooth.send(
-                        Message(
-                            channel="current",
-                            value="%d:%d:%d" % (self.current[0], self.
-                                                current[1], self.orientation)))
+                    self.bluetooth.send(Message(channel="current", value="%d:%d:%d" % (self.current[0], self.current[1], self.orientation)))
             # If the channel is 'turn', turn the robot to position...
             elif channel == "turn":
                 value = int(value)
                 if self.orientation == 3 and value == 0:
-                    if not self._90Right():
+                    move  = self._90Right()
+                    if  move == 1:
+                        self.runningPath = False
                         return ("path", "error")
+                    elif move == -1:
+                        self.runningPath = False
+                        return ("path", "stopped")
                     self.orientation = 0
-                    self.bluetooth.send(
-                        Message(
-                            channel="current",
-                            value="%d:%d:%d" % (self.current[0], self.
-                                                current[1], self.orientation)))
+                    self.bluetooth.send(Message(channel="current", value="%d:%d:%d" % (self.current[0], self.current[1], self.orientation)))
                 if self.orientation == 0 and value == 3:
-                    if not self._90Left():
+                    move  = self._90Left()
+                    if  move == 1:
+                        self.runningPath = False
                         return ("path", "error")
+                    elif move == -1:
+                        self.runningPath = False
+                        return ("path", "stopped")
                     self.orientation = 3
-                    self.bluetooth.send(
-                        Message(
-                            channel="current",
-                            value="%d:%d:%d" % (self.current[0], self.
-                                                current[1], self.orientation)))
+                    self.bluetooth.send(Message(channel="current", value="%d:%d:%d" % (self.current[0], self.current[1], self.orientation)))
                 elif self.orientation < value:
                     for i in range(value - self.orientation):
-                        if not self._90Right():
+                        move  = self._90Right()
+                        if  move == 1:
+                            self.runningPath = False
                             return ("path", "error")
+                        elif move == -1:
+                            self.runningPath = False
+                            return ("path", "stopped")
                         self.orientation += 1
-                        self.bluetooth.send(
-                            Message(
-                                channel="current",
-                                value="%d:%d:%d" % (self.current[
-                                    0], self.current[1], self.orientation)))
+                        self.bluetooth.send(Message(channel="current", value="%d:%d:%d" % (self.current[0], self.current[1], self.orientation)))
                 else:
                     for i in range(self.orientation - value):
-                        if not self._90Left():
+                        move  = self._90Left()
+                        if  move == 1:
+                            self.runningPath = False
                             return ("path", "error")
+                        elif move == -1:
+                            self.runningPath = False
+                            return ("path", "stopped")
                         self.orientation -= 1
-                        self.bluetooth.send(
-                            Message(
-                                channel="current",
-                                value="%d:%d:%d" % (self.current[
-                                    0], self.current[1], self.orientation)))
+                        self.bluetooth.send(Message(channel="current", value="%d:%d:%d" % (self.current[0], self.current[1], self.orientation)))
                 self.orientation = value
-
+        
+        self.runningPath = False
         return ("path", "Success")
 
     def close(self, value):
