@@ -604,10 +604,10 @@ class RoomWidget(QtGui.QWidget):
             # Draw the image...
             self.grid.draw(self.image)
         elif value == "error":
-            self.executingPath = False
+            self.grid.executingPath = False
             QtGui.QMessageBox.warning(None, "EV3", "Unknown problem occured!", "Ok")
         elif value == "Success":
-            self.executingPath = False
+            self.grid.executingPath = False
 
     def setWall(self, value):
         """Set a wall in the grid"""
@@ -668,7 +668,7 @@ class RoomWidget(QtGui.QWidget):
             if question == 1:
                 return
 
-        self.bluetooth.send(Message("path", "break"))
+            self.bluetooth.send(Message("path", "stop"))
 
         clickedSquare = self.grid.getSquareAtCoordinate(self.mousePos.x(),
                                                         self.mousePos.y())
@@ -714,19 +714,8 @@ class RoomWidget(QtGui.QWidget):
         """When the mouse wasn't moved, find square on the click position"""
         # Allow a small moving...
         if self.moved < 5:
-            # Get the clicked square....
-            square = self.grid.getSquareAtCoordinate(event.x(), event.y())
-            square = self.grid.getSquare(square.x(), square.y())
-
-            # Update new state...
-            self.grid.center = False
-            self.grid.scale = False
-            self.moved = False
-
-            self.grid.findOnesWay(square)
-
-            # Draw the image...
-            self.grid.draw(self.image)
+            # Set the end position of the path...
+            self.onEndPos()
 
     def mousePressEvent(self, event):
         """Called when the mouse is pressed"""
