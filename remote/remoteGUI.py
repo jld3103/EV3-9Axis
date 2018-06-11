@@ -139,6 +139,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # Add bluetooth listener...
         self.bluetooth.addListener("connection", self.handleConnection)
+        self.bluetooth.addListener("close", self.handleClose, updating = False)
         self.bluetooth.addListener("selectDevice", self.handleSelectDevice)
 
     def getPartingLine(self):
@@ -257,6 +258,12 @@ class MainWindow(QtGui.QMainWindow):
             for function in self.bluetooth.bluetoothData.channels[message.
                                                                   channel]:
                 function(message.value)
+                
+    def handleClose(self, value):
+        """Hande the bluetooth connection"""
+        
+        if value == "Closed server":
+            self.bluetooth.disconnect()
 
     def handleConnection(self, value):
         """Handle the bluetooth connection"""
@@ -287,22 +294,22 @@ class MainWindow(QtGui.QMainWindow):
 
     def onCalibrateF(self):
         """Calibrate froward on the ev3"""
-        dialog = calibrateDialog.CalibrateDialog(self, mode="Forward")
+        dialog = calibrateDialog.CalibrateDialog(self, mode = "Forward", settings = (("calibrateForwardTime", 3000), ("calibrateForwardSpeedR", 255), ("calibrateForwardSpeedL", 255)), units = ("Time", "Speed", "Speed"), sliderDifferences = (100, 300, 100, 5000))
         dialog.show()
 
     def onCalibrateR(self):
         """Calibrate right on the ev3"""
-        dialog = calibrateDialog.CalibrateDialog(self, mode="Right")
+        dialog = calibrateDialog.CalibrateDialog(self, mode = "Right", settings = (("calibrateRightSpeed", 60), ("calibrateRightDegrees", 90)), units = ("Speed", "Degrees"), sliderDifferences = (20, 150, 10, 200))
         dialog.show()
 
     def onCalibrateL(self):
         """Calibrate left on the ev3"""
-        dialog = calibrateDialog.CalibrateDialog(self, mode="Left")
+        dialog = calibrateDialog.CalibrateDialog(self, mode = "Left", settings = (("calibrateLeftSpeed", 60), ("calibrateLeftDegrees", -90)), units = ("Speed", "Degrees"), sliderDifferences = (-150, -20, 10, 200))
         dialog.show()
 
     def onCalibrateD(self):
         """Calibrate distance sensor"""
-        dialog = calibrateDialog.CalibrateDialog(self, mode="Distance")
+        dialog = calibrateDialog.CalibrateDialog(self, mode = "Distance", settings = [("calibrateDistance", 2000)], units = ["Distance"], sliderDifferences = (0, 0, 10, 2499))
         dialog.show()
 
     def handleSelectDevice(self, value):

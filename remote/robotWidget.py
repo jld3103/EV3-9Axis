@@ -237,13 +237,21 @@ class Robot(QtOpenGL.QGLWidget):
         bluetooth.addListener("touchSensor", self.setTouchSensor)
         bluetooth.addListener("colorSensor", self.setColorSensor)
         bluetooth.addListener("distanceSensor", self.setDistanceSensor)
-        bluetooth.addListener("accel", self.setAccel)
-        bluetooth.addListener("mag", self.setMag)
+        bluetooth.addListener("gyroSensor", self.setGyroSensor)
+        #bluetooth.addListener("accel", self.setAccel)
+        #bluetooth.addListener("mag", self.setMag)
 
         self.max = 0
         self.min = 0
 
         self.oldMousePosition = 0
+        
+    def setGyroSensor(self, value):
+        degrees = int(value) % 360.0
+        if degrees < 0:
+            degrees = 360 - degrees
+        self.zRotDeg = 360 - degrees 
+        self.updateGL()
 
     def dist(self, a, b):
         return math.sqrt((a * a) + (b * b))
@@ -410,7 +418,7 @@ class Robot(QtOpenGL.QGLWidget):
         # Rotate the object...
         glRotate(self.xRotDeg, 1, 0, 0)
         glRotate(self.yRotDeg, 0, 0, 1)
-        #        glRotate(self.zRotDeg, 0, 1, 0)
+        glRotate(self.zRotDeg, 0, 1, 0)
 
         # Render each object...
         for object in self.objects:

@@ -1,6 +1,7 @@
 # This file controls the EV3
 # Author: Finn G., Jan-Luca D.
 
+print("import libraries...")
 import queue
 import time
 
@@ -11,6 +12,7 @@ from constants import *
 from logger import *
 from message import Message
 
+setLogLevel(logLevel)
 
 class EV3:
     """Controls the EV3"""
@@ -27,24 +29,21 @@ class EV3:
         self.stopPath = False
 
         # Calibration data
-        self.cFT = 3000  # cFT = CalibrateForwardTime
-        self.cFL = 255
-        self.cFR = 255
-        self.cWD = 2300  # cWD = calibrateWallDistance
-
-        self.cLT = 3000
-        self.cLL = 255
-        self.cLR = 255
-
-        self.cRT = 3000
-        self.cRL = 255
-        self.cRR = 255
+        self.calibrateForwardTime = 3000
+        self.calibrateForwardLeft = 255
+        self.calibrateForwardRight = 255
+        self.calibrateWallDistance = 2300
+        self.calibrateLeftSpeed = 60
+        self.calibrateLeftDegrees = -90
+        self.calibrateRightSpeed = 60
+        self.calibrateRightDegrees = 90
 
         # Init all sensors...
         self.touchSensor = ev3.TouchSensor()
         self.infraredSensor = ev3.InfraredSensor()
         self.colorSensor = ev3.ColorSensor()
         self.ultraSensor = ev3.UltrasonicSensor()
+        self.gyroSensor = ev3.GyroSensor()
         self.mpu9250 = MPU9250.MPU9250()
 
         # Init all motors...
@@ -65,20 +64,20 @@ class EV3:
         self.bluetooth.addListener("ultraSensor", self.sendUltraValue)
         self.bluetooth.addListener("distanceSensor", self.sendDistanceValue)
         self.bluetooth.addListener("colorSensor", self.sendColorValue)
-        self.bluetooth.addListener("screen", self.drawScreen)
         self.bluetooth.addListener("motorR", self.turnRight)
         self.bluetooth.addListener("motorL", self.turnLeft)
         self.bluetooth.addListener("accel", self.sendAccelData)
-        self.bluetooth.addListener("gyro", self.sendGyroData)
+        #self.bluetooth.addListener("gyro", self.sendGyroData)
         self.bluetooth.addListener("mag", self.sendMagData)
         self.bluetooth.addListener("temp", self.sendTemData)
         self.bluetooth.addListener("close", self.close)
         self.bluetooth.addListener("calibrateForward", self.calibrateForward)
-        self.bluetooth.addListener("calibrateLeft", self.calibrateLeft)
-        self.bluetooth.addListener("calibrateRight", self.calibrateRight)
         self.bluetooth.addListener("calibrateDistance", self.calibrateDistance)
+        self.bluetooth.addListener("calibrateRight", self.calibrateRight)
+        self.bluetooth.addListener("calibrateLeft", self.calibrateLeft)
         self.bluetooth.addListener("path", self.path)
         self.bluetooth.addListener("current", self.setCurrent)
+        self.bluetooth.addListener("gyroSensor", self.sendGyroValue)
 
     def receivedData(self, function, value):
         """Execute the listener for the channel"""
@@ -111,6 +110,14 @@ class EV3:
 
             # Wait for 0.1 seconds (TODO: Set interval from the remote)
             time.sleep(0.1)
+            
+    def sendGyroValue(self, data):
+        """Send the gyro value to the remote"""
+        try:
+            return ("gyroSensor", self.gyroSensor.value())
+        except:
+            self.gyroSensor = ev3.GyroSensor()
+            return ("gyroSensor", "Device not connected")
 
     def calibrateForward(self, data):
         """Calibrate the time and speed to drive forward"""
@@ -119,115 +126,160 @@ class EV3:
             self._1Forward()
         else:
             data = data.split(":")
-            self.cFT = int(data[0])
-            self.cFL = int(data[1])
-            self.cFR = int(data[2])
+            self.calibrateForwardTime = int(data[0])
+            self.calibrateForwardLeft = int(data[2])
+            self.calibrateForwardRight = int(data[1])
         return ("calibrateForward", "Success")
-
-    def calibrateLeft(self, data):
-        """Calibrate the time and speed to turn left"""
-        if data == "test":
-            info("Testing left...")
-            self._90Left()
-        else:
-            data = data.split(":")
-            self.cLT = int(data[0])
-            self.cLL = int(data[1])
-            self.cLR = int(data[2])
-        return ("calibrateLeft", "Success")
-
+        
     def calibrateRight(self, data):
-        """Calibrate the time and speed to turn right"""
+        """Calibrate the time and speed to drive forward"""
         if data == "test":
             info("Testing right...")
-            self._90Right()
+            self.turn(self.calibrateRightSpeed, self.calibrateRightDegrees)
         else:
             data = data.split(":")
-            self.cRT = int(data[0])
-            self.cRL = int(data[1])
-            self.cRR = int(data[2])
+            self.calibrateRightSpeed = int(data[0])
+            self.calibrateRightDegrees = int(data[1])
         return ("calibrateRight", "Success")
+    
+    def calibrateLeft(self, data):
+        """Calibrate the time and speed to drive forward"""
+        if data == "test":
+            info("Testing right...")
+            self.turn(self.calibrateLeftSpeed, self.calibrateLeftDegrees)
+        else:
+            data = data.split(":")
+            self.calibrateRightSpeed = int(data[0])
+            self.calibrateRightDegrees = int(data[1])
+        return ("calibrateLeft", "Success")
 
     def calibrateDistance(self, data):
         """Calibrate the maximum distance to detect an obstacle"""
-        self.cWD = int(data)
+        self.calibrateWallDistance = int(data)
         return ("calibrateDistance", "Success")
+        
+    def turn(self, speed, degrees):
+        """Turn the robot by the given number of degrees"""
+        
+        startOrientation = "Device not connected"
+        while startOrientation == "Device not connected":
+            startOrientation = self.sendGyroValue(None)[1]
+            if startOrientation == "Device not connected":
+                time.sleep(0.1)
+        aimOrientation = startOrientation + degrees
+        driving = 0 # -1: turning right; 0: not turning; 1: turning left; -10: turning back to start orientation
+        result = "success"
+        while True:
+            # Get the current orientation...
+            orientation = "Device not connected"
+            while orientation == "Device not connected":
+                orientation = self.sendGyroValue(None)[1]
 
-    def controlTheDrive(self, startR, startL):
-        """Check until the robot stops the touch sensor"""
-        result = 0
+            # If the current orientation is bigger than the aim orientation and the robot is not turning left already turn left...
+            if orientation > aimOrientation and driving != 1:
+                self.motorR.run_forever(speed_sp = speed)
+                self.motorL.run_forever(speed_sp = -speed)
+                driving = 1
+            # If the current orientation is smaler than the aim orientation and the robot is not turning left already turn right...
+            elif orientation < aimOrientation and driving != -1:
+                info(-speed)
+                self.motorR.run_forever(speed_sp = -speed) #TODO: In this line there can be errors!!!
+                self.motorL.run_forever(speed_sp = speed)
+                driving = -1
+            # If the current orientation is the aim orientation stop turning...
+            elif orientation == aimOrientation:
+                self.motorR.stop()
+                self.motorL.stop()
+                break
+                
+            if self.stopPath:
+                # Stop the motors...
+                self.motorR.stop()
+                self.motorL.stop()
+                driving = -10
+                result = "stopped"
+                
+                aimOrientation = startOrientation
+                    
+            # Check if the touch sensor is pressed...
+            if driving != -10:
+                tsValue = self.sendTouchValue(None)[1]
+                if tsValue == "Device not connected":
+                    continue
+                elif tsValue:
+                    # Stop the motors...
+                    self.motorR.stop()
+                    self.motorL.stop()
+                    driving = -10
+                    result = "error"
+                    
+                    aimOrientation = startOrientation
+                    
+        return result
+
+    def _1Forward(self, orientation = None):
+        """Drive one square forward"""
+        info("1 forward")
+        
+        # Notice the current orientation...
+        if orientation == None:
+            orientation = "Device not connected"
+            while orientation == "Device not connected":
+                orientation = self.sendGyroValue(None)[1]
+                if orientation == "Device not connected":
+                    time.sleep(0.1)
+
+        # Notice the current tacho Spostion...
+        absPositionR = self.motorR.position
+        absPositionL = self.motorL.position
+        
+        # Run the motors...
+        self.motorR.run_timed(time_sp=self.calibrateForwardTime, speed_sp=self.calibrateForwardRight)
+        self.motorL.run_timed(time_sp=self.calibrateForwardTime, speed_sp=self.calibrateForwardLeft)
+        mode = "forward"
+        result = "success"
         # Wait until the motors stop...
-        while self.motorR.is_running or self.motorL.is_running:
+        while self.motorL.is_running:
             tsValue = self.sendTouchValue(None)[1]
             if tsValue == "Device not connected":
                 time.sleep(0.1)
                 continue
+            currentOrientation = self.sendGyroValue(None)[1]
+            if currentOrientation == "Device not connected":
+                time.sleep(0.1)
+                continue
+                
+            # If the touch sensor is pressed or the path is stopped drive back to start position...
             if tsValue or self.stopPath:
                 # Stop turning...
                 self.motorR.stop()
                 self.motorL.stop()
-                result = 1
+                result = "failed"
                 if self.stopPath:
                     self.stopPath = False
-                    result = -1
+                    result = "stopped"
                 # Drive to old postion...
-                self.motorR.run_to_abs_pos(
-                    position_sp=startR, speed_sp=self.cLR)
-                self.motorL.run_to_abs_pos(
-                    position_sp=startL, speed_sp=self.cLL)
-                    
+                self.motorR.run_to_abs_pos(position_sp=absPositionR, speed_sp=self.calibrateForwardRight)
+                self.motorL.run_to_abs_pos(position_sp=absPositionL, speed_sp=self.calibrateForwardLeft)
+                mode = "backward"
+            
+            #TODO: This is the correction with the gyro sensor, but it's not very helpful yet...
+            # Set the speed of the right motor to drive forward...
+#            if mode == "forward":
+#                newSpeed = self.calibrateForwardRight + (currentOrientation-orientation) * 10
+#                self.motorR.run_forever(speed_sp=newSpeed)
                 
             time.sleep(0.1)
+            
+        #self.motorR.stop()
 
         return result
-
-    def _1Forward(self):
-        """Drive one square forward"""
-        info("1 forward")
-
-        # Notice the current tacho Spostion...
-        absPositionR = self.motorR.position
-        absPositionL = self.motorL.position
-
-        # Run the motors...
-        self.motorR.run_timed(time_sp=self.cFT, speed_sp=self.cFR)
-        self.motorL.run_timed(time_sp=self.cFT, speed_sp=self.cFL)
-
-        return self.controlTheDrive(absPositionR, absPositionL)
-
-    def _90Left(self):
-        """Turn 90° left"""
-        info("90 left")
-
-        # Notice the current tacho Spostion...
-        absPositionR = self.motorR.position
-        absPositionL = self.motorL.position
-
-        # Run the motors...
-        self.motorR.run_timed(time_sp=self.cLT, speed_sp=self.cLR)
-        self.motorL.run_timed(time_sp=self.cLT, speed_sp=-self.cLL)
-
-        return self.controlTheDrive(absPositionR, absPositionL)
-
-    def _90Right(self):
-        """Turn 90° right"""
-        info("90 right")
-
-        # Notice the current tacho Spostion...
-        absPositionR = self.motorR.position
-        absPositionL = self.motorL.position
-
-        # Run the motors...
-        self.motorR.run_timed(time_sp=self.cLT, speed_sp=-self.cLR)
-        self.motorL.run_timed(time_sp=self.cLT, speed_sp=self.cLL)
-
-        return self.controlTheDrive(absPositionR, absPositionL)
-
+        
     def isWall(self):
         """Check if the next square is a wall"""
         distance = self.sendDistanceValue(None)[1]
         if distance != "Device not connected":
-            if distance <= self.cWD:
+            if distance <= self.calibrateWallDistance:
                 info("There is a wall")
                 return True
         else:
@@ -235,7 +287,7 @@ class EV3:
                 "Cannot check if there is a wall (Distance sensor not connected)"
             )
             return False
-        logging.info("There is no wall")
+        info("There is no wall")
         return False
 
     def setCurrent(self, value):
@@ -285,67 +337,58 @@ class EV3:
 
             # If the channel is 'forward', drive the number of squares forward...
             if channel == "forward":
+                # Get current orientation...
+                orientation = "Device not connected"
+                while orientation == "Device not connected":
+                    orientation = self.sendGyroValue(None)[1]
+                    time.sleep(0.1)
+                    
                 for i in range(int(value)):
+                    # Ckeck if there is a wall...
                     if self.isWall():
                         self.bluetooth.send(Message(channel="wall", value="%d:%d" % self.getNextSquare()))
                         self.runningPath = False
                         return ("path", "failed")
-                    move = self._1Forward()
-                    if move == 1:
+                    move = self._1Forward(orientation = orientation)
+                    # Check if 1Forard was successfull...
+                    if move != "success":
                         self.bluetooth.send(Message(channel="wall", value="%d:%d" % self.getNextSquare()))
                         self.runningPath = False
-                        return ("path", "failed")
-                    elif move == -1:
-                        self.runningPath = False
-                        return ("path", "stopped")
-                    self.current = (self.getNextSquare())
+                        return ("path", move)
+                    
+                    # Get next position...
+                    self.current = self.getNextSquare()
                     self.bluetooth.send(Message(channel="current", value="%d:%d:%d" % (self.current[0], self.current[1], self.orientation)))
+                    
             # If the channel is 'turn', turn the robot to position...
             elif channel == "turn":
                 value = int(value)
-                if self.orientation == 3 and value == 0:
-                    move  = self._90Right()
-                    if  move == 1:
+                newOrientation = self.orientation
+                while self.orientation != value:
+                    # Turn in the correct dircection...
+                    if self.orientation == 3 and value == 0:
+                        move  = self.turn(self.calibrateRightSpeed, self.calibrateRightDegrees)
+                        newOrientation = 0
+                    elif self.orientation == 0 and value == 3:
+                        move  = self.turn(self.calibrateLeftSpeed, self.calibrateLeftDegrees)
+                        newOrientation = 3
+                    elif self.orientation < value:
+                        move  = self.turn(self.calibrateRightSpeed, self.calibrateRightDegrees)
+                        newOrientation += 1
+                    else:
+                        move  = self.turn(self.calibrateLeftSpeed, self.calibrateLeftDegrees)
+                        newOrientation -= 1
+                    
+                    # Check if the turning failed...
+                    if  move != "success":
                         self.runningPath = False
-                        return ("path", "error")
-                    elif move == -1:
-                        self.runningPath = False
-                        return ("path", "stopped")
-                    self.orientation = 0
+                        return ("path", move)
+                    
+                    # Set the new orientation...
+                    self.orientation = newOrientation
+                        
+                    # Inform the GUI...
                     self.bluetooth.send(Message(channel="current", value="%d:%d:%d" % (self.current[0], self.current[1], self.orientation)))
-                if self.orientation == 0 and value == 3:
-                    move  = self._90Left()
-                    if  move == 1:
-                        self.runningPath = False
-                        return ("path", "error")
-                    elif move == -1:
-                        self.runningPath = False
-                        return ("path", "stopped")
-                    self.orientation = 3
-                    self.bluetooth.send(Message(channel="current", value="%d:%d:%d" % (self.current[0], self.current[1], self.orientation)))
-                elif self.orientation < value:
-                    for i in range(value - self.orientation):
-                        move  = self._90Right()
-                        if  move == 1:
-                            self.runningPath = False
-                            return ("path", "error")
-                        elif move == -1:
-                            self.runningPath = False
-                            return ("path", "stopped")
-                        self.orientation += 1
-                        self.bluetooth.send(Message(channel="current", value="%d:%d:%d" % (self.current[0], self.current[1], self.orientation)))
-                else:
-                    for i in range(self.orientation - value):
-                        move  = self._90Left()
-                        if  move == 1:
-                            self.runningPath = False
-                            return ("path", "error")
-                        elif move == -1:
-                            self.runningPath = False
-                            return ("path", "stopped")
-                        self.orientation -= 1
-                        self.bluetooth.send(Message(channel="current", value="%d:%d:%d" % (self.current[0], self.current[1], self.orientation)))
-                self.orientation = value
         
         self.runningPath = False
         return ("path", "Success")
