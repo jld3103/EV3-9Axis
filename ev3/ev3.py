@@ -174,7 +174,8 @@ class EV3:
             orientation = "Device not connected"
             while orientation == "Device not connected":
                 orientation = self.sendGyroValue(None)[1]
-
+            if speed > 1050:
+                speed = 1050
             # If the current orientation is bigger than the aim orientation and the robot is not turning left already turn left...
             if orientation > aimOrientation and driving != 1:
                 self.motorR.run_forever(speed_sp = speed)
@@ -182,8 +183,7 @@ class EV3:
                 driving = 1
             # If the current orientation is smaler than the aim orientation and the robot is not turning left already turn right...
             elif orientation < aimOrientation and driving != -1:
-                info(-speed)
-                self.motorR.run_forever(speed_sp = -speed) #TODO: In this line there can be errors!!!
+                self.motorR.run_forever(speed_sp = -speed)
                 self.motorL.run_forever(speed_sp = speed)
                 driving = -1
             # If the current orientation is the aim orientation stop turning...
