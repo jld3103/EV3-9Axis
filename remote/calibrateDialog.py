@@ -55,7 +55,7 @@ class CalibrateDialog(QtGui.QDialog):
             self.sliderRight.setProperty("value", self.settings[1])
             self.sliderRight.valueChanged.connect(self.onRightSlider)
             self.sliders.append(self.sliderRight)
-            
+
             if mode == "Forward":
                 # Create the speed left slider...
                 self.sliderLeft = QtGui.QSlider(QtCore.Qt.Vertical, self)
@@ -86,10 +86,10 @@ class CalibrateDialog(QtGui.QDialog):
         self.labelCenter = QtGui.QLabel(self)
         self.labelCenter.setGeometry(QtCore.QRect(170, 210, 41, 32))
         self.labelCenter.setAlignment(QtCore.Qt.AlignCenter)
-        self.labelCenter.setText("%s\n(%d)" % (self.units[0], self.settings[0]))
-        
+        self.labelCenter.setText("%s\n(%d)" % (self.units[0], self.sliderCenter.value()))
+
         if mode == "Distance":
-            self.btn_try.setEnabled(False)
+            self.btn_try.setEnabled(True)
             self.labelCenter.setGeometry(QtCore.QRect(150, 210, 81, 32))
 
         else:
@@ -97,14 +97,13 @@ class CalibrateDialog(QtGui.QDialog):
             self.labelRight = QtGui.QLabel(self)
             self.labelRight.setGeometry(QtCore.QRect(260, 240, 71, 32))
             self.labelRight.setAlignment(QtCore.Qt.AlignCenter)
-            self.labelRight.setText("%s right\n(%d)" % (self.units[0], self.settings[1]))
-
+            self.labelRight.setText("%s right\n(%d)" % (self.units[1], self.sliderRight.value()))
             if mode == "Forward":
                 # Create speed left lable...
                 self.labelLeft = QtGui.QLabel(self)
                 self.labelLeft.setGeometry(QtCore.QRect(60, 240, 71, 32))
                 self.labelLeft.setAlignment(QtCore.Qt.AlignCenter)
-                self.labelLeft.setText("%s left\n(%d)" % (self.units[0], self.settings[2]))
+                self.labelLeft.setText("%s left\n(%d)" % (self.units[2], self.sliderLeft.value()))
 
     def onLeftSlider(self):
         """Set the speed left lable on the slider value"""
@@ -135,10 +134,10 @@ class CalibrateDialog(QtGui.QDialog):
         for i in range(len(self.settings)):
             calibrateString += str(self.sliders[i].value()) + ":"
         calibrateString = calibrateString[:-1]
-        
+
         # Calibrate the ev3...
         self.parent.bluetooth.send(Message(channel="calibrate%s" % self.mode, value=calibrateString))
-        
+
         # Try it out...
         self.parent.bluetooth.send(
             Message(

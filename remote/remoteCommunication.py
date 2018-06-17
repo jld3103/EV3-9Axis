@@ -199,24 +199,19 @@ class BluetoothThread(threading.Thread):
         self.send(
             Message(
                 channel="calibrateRight",
-                value="%d:%d:%d" %
-                (self.parent.settings.get("calibrateRightTime", default=3000),
-                 self.parent.settings.get("calibrateRightSpeedR", default=255),
-                 self.parent.settings.get("calibrateRightSpeedL",
-                                          default=255))))
+                value="%d:%d" %
+                (self.parent.settings.get("calibrateRightSpeed", default=60),
+                 self.parent.settings.get("calibrateRightDegrees", default=90))))
         self.send(
             Message(
                 channel="calibrateLeft",
-                value="%d:%d:%d" %
-                (self.parent.settings.get("calibrateLeftTime", default=3000),
-                 self.parent.settings.get("calibrateLeftSpeedR", default=255),
-                 self.parent.settings.get("calibrateLeftSpeedL",
-                                          default=255))))
+                value="%d:%d" %
+                (self.parent.settings.get("calibrateLeftSpeed", default=60),
+                 self.parent.settings.get("calibrateLeftDegrees", default=-90))))
         self.send(
             Message(
                 channel="calibrateDistance",
-                value="%d" % (self.parent.settings.get("calibrateDistance",
-                                                       default=2000))))
+                value="%d" % (self.parent.settings.get("calibrateDistance", default=2000))))
 
     def disconnect(self):
         """Disconnect from bluetooth device"""
