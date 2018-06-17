@@ -1,7 +1,7 @@
 # This file controls the EV3
 # Author: Finn G., Jan-Luca D.
 
-print("import libraries...")
+print("Importing libraries...")
 import queue
 import time
 
@@ -129,6 +129,7 @@ class EV3:
             self.calibrateForwardTime = int(data[0])
             self.calibrateForwardLeft = int(data[2])
             self.calibrateForwardRight = int(data[1])
+            info("Got calibrating data for forward: " + str.join(":", data))
         return ("calibrateForward", "Success")
         
     def calibrateRight(self, data):
@@ -140,23 +141,30 @@ class EV3:
             data = data.split(":")
             self.calibrateRightSpeed = int(data[0])
             self.calibrateRightDegrees = int(data[1])
+            info("Got calibrating data for right: " + str.join(":", data))
         return ("calibrateRight", "Success")
     
     def calibrateLeft(self, data):
         """Calibrate the time and speed to drive forward"""
         if data == "test":
-            info("Testing right...")
+            info("Testing left...")
             self.turn(self.calibrateLeftSpeed, self.calibrateLeftDegrees)
         else:
             data = data.split(":")
             self.calibrateRightSpeed = int(data[0])
             self.calibrateRightDegrees = int(data[1])
+            info("Got calibrating data for left: " + str.join(":", data))
         return ("calibrateLeft", "Success")
 
     def calibrateDistance(self, data):
         """Calibrate the maximum distance to detect an obstacle"""
-        self.calibrateWallDistance = int(data)
-        return ("calibrateDistance", "Success")
+        if data == "test":
+            print("Testing distance...")
+            self.isWall()
+        else:
+            self.calibrateWallDistance = int(data)
+            info("Got calibrating data for distance: " + data)
+            return ("calibrateDistance", "Success")
         
     def turn(self, speed, degrees):
         """Turn the robot by the given number of degrees"""
@@ -174,8 +182,12 @@ class EV3:
             orientation = "Device not connected"
             while orientation == "Device not connected":
                 orientation = self.sendGyroValue(None)[1]
-            if speed > 1050:
-                speed = 1050
+            if speed < 0:
+                if speed < -1050:
+                    speed = -1050
+            else:
+                if speed > 1050:
+                    speed = 1050
             # If the current orientation is bigger than the aim orientation and the robot is not turning left already turn left...
             if orientation > aimOrientation and driving != 1:
                 self.motorR.run_forever(speed_sp = speed)
@@ -364,21 +376,20 @@ class EV3:
             elif channel == "turn":
                 value = int(value)
                 newOrientation = self.orientation
-                while self.orientation != value:
+                while newOrientation != value:
                     # Turn in the correct dircection...
-                    if self.orientation == 3 and value == 0:
-                        move  = self.turn(self.calibrateRightSpeed, self.calibrateRightDegrees)
+                    if newOrientation == 3 and value == 0:
+                        move = self.turn(self.calibrateRightSpeed, -self.calibrateRightDegrees)
                         newOrientation = 0
-                    elif self.orientation == 0 and value == 3:
-                        move  = self.turn(self.calibrateLeftSpeed, self.calibrateLeftDegrees)
+                    elif newOrientation == 0 and value == 3:
+                        move = self.turn(self.calibrateLeftSpeed, self.calibrateLeftDegrees)
                         newOrientation = 3
-                    elif self.orientation < value:
-                        move  = self.turn(self.calibrateRightSpeed, self.calibrateRightDegrees)
+                    elif newOrientation < value:
+                        move = self.turn(self.calibrateRightSpeed, -self.calibrateRightDegrees)
                         newOrientation += 1
-                    else:
-                        move  = self.turn(self.calibrateLeftSpeed, self.calibrateLeftDegrees)
+                    elif newOrientation > value:
+                        move = self.turn(self.calibrateLeftSpeed, self.calibrateLeftDegrees)
                         newOrientation -= 1
-                    
                     # Check if the turning failed...
                     if  move != "success":
                         self.runningPath = False
